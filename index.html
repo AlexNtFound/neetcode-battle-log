@@ -1,0 +1,2709 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10周作战日志</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e0c;
+    --bg-card: #16140f;
+    --bg-elev: #1c1a14;
+    --ink: #ebe6d6;
+    --ink-mute: #807866;
+    --ink-faint: #3c372d;
+    --line: #2a2620;
+    --accent: #d96b3e;
+    --accent-faint: rgba(217, 107, 62, 0.12);
+    --accent-deep: #8a3a1c;
+    --done: #7a9a5e;
+    --warn: #d4a84a;
+    --serif: 'Instrument Serif', 'Noto Serif SC', Georgia, serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --cn: 'Noto Serif SC', 'PingFang SC', serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-font-smoothing: antialiased; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-weight: 300;
+    font-size: 13.5px;
+    line-height: 1.65;
+    min-height: 100vh;
+    padding: 32px 24px 80px;
+    background-image:
+      radial-gradient(ellipse 800px 400px at 20% 0%, rgba(217, 107, 62, 0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 600px 300px at 100% 100%, rgba(217, 107, 62, 0.03) 0%, transparent 60%);
+  }
+
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; opacity: 0.4; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
+
+  /* Header */
+  .header {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    padding-bottom: 24px; border-bottom: 1px solid var(--line); margin-bottom: 36px;
+  }
+  .header-left h1 {
+    font-family: var(--serif); font-weight: 400; font-size: 44px;
+    line-height: 1; letter-spacing: -0.5px;
+  }
+  .header-left h1 .accent { color: var(--accent); font-style: italic; }
+  .header-left .sub {
+    font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--ink-mute); margin-top: 12px;
+  }
+  .header-right { text-align: right; }
+  .header-right .date {
+    font-family: var(--serif); font-size: 28px; line-height: 1; font-style: italic;
+  }
+  .header-right .day-label {
+    font-size: 10.5px; letter-spacing: 0.2em; color: var(--ink-mute);
+    margin-top: 8px; text-transform: uppercase;
+  }
+
+  /* Phase Bar */
+  .phase-strip {
+    display: flex; gap: 4px; margin-bottom: 36px;
+  }
+  .phase-cell {
+    flex: 1; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--line);
+    font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute);
+    position: relative; transition: all 0.2s; cursor: pointer;
+  }
+  .phase-cell:hover { border-color: var(--ink-mute); color: var(--ink); }
+  .phase-cell .num { font-family: var(--serif); font-size: 18px; color: var(--ink); display: block; line-height: 1; margin-bottom: 4px; font-style: italic; }
+  .phase-cell.past { opacity: 0.45; }
+  .phase-cell.past:hover { opacity: 0.8; }
+  .phase-cell.active { background: var(--accent-faint); border-color: var(--accent); color: var(--accent); opacity: 1; }
+  .phase-cell.active .num { color: var(--accent); }
+  .phase-cell.active:hover { border-color: var(--accent); color: var(--accent); }
+  .phase-cell.manual::after {
+    content: "M"; position: absolute; top: 4px; right: 6px;
+    font-size: 8.5px; color: var(--warn); letter-spacing: 0;
+  }
+  .phase-cell .dates { font-size: 9px; opacity: 0.7; display: block; margin-top: 2px; }
+
+  .phase-strip-wrap { margin-bottom: 36px; }
+  .phase-mode-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 10px; letter-spacing: 0.2em; color: var(--ink-mute);
+    text-transform: uppercase; margin-bottom: 8px; padding: 0 2px;
+  }
+  .phase-mode-bar .mode-label { font-family: var(--cn); letter-spacing: 0.15em; }
+  .phase-mode-bar .auto-btn {
+    background: none; border: 1px solid var(--warn); color: var(--warn);
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em;
+    padding: 3px 10px; cursor: pointer; text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .phase-mode-bar .auto-btn:hover { background: var(--warn); color: var(--bg); }
+  .phase-mode-bar .auto-btn.hidden { display: none; }
+  .phase-mode-bar .hint { color: var(--ink-faint); font-family: var(--cn); letter-spacing: 0.1em; }
+
+  /* Today Card */
+  .today-card {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    padding: 28px 32px;
+    margin-bottom: 32px;
+    position: relative;
+  }
+  .today-card::before {
+    content: var(--today-label, "今日"); position: absolute; top: -10px; left: 24px;
+    background: var(--bg); padding: 0 12px; font-family: var(--cn);
+    font-size: 12px; letter-spacing: 0.3em; color: var(--accent);
+  }
+  .today-title {
+    font-family: var(--serif); font-size: 32px; line-height: 1.15;
+    margin-bottom: 8px; letter-spacing: -0.3px;
+  }
+  .today-title .em { color: var(--accent); font-style: italic; }
+  .today-focus {
+    font-family: var(--cn); font-size: 14px; color: var(--ink-mute);
+    margin-bottom: 20px;
+  }
+  .today-action {
+    background: var(--bg-elev); padding: 16px 20px; border-left: 2px solid var(--warn);
+    font-size: 12.5px; color: var(--ink); margin-top: 16px;
+  }
+  .today-action .label {
+    font-family: var(--cn); font-size: 10.5px; letter-spacing: 0.2em;
+    color: var(--warn); text-transform: uppercase; margin-bottom: 6px;
+  }
+  .today-action ol { padding-left: 18px; margin-top: 6px; }
+  .today-action li { margin-bottom: 4px; font-size: 12.5px; }
+  .today-action a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent); }
+  .today-action a:hover { color: var(--ink); border-color: var(--ink); }
+
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-bottom: 24px; }
+  @media (max-width: 760px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* Cards */
+  .card {
+    background: var(--bg-card); border: 1px solid var(--line);
+    padding: 24px 28px; position: relative;
+  }
+  .card-title {
+    font-family: var(--cn); font-size: 11px; letter-spacing: 0.25em;
+    color: var(--ink-mute); text-transform: uppercase; margin-bottom: 18px;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .card-title .num-badge {
+    font-family: var(--serif); font-style: italic; font-size: 14px;
+    color: var(--accent); letter-spacing: 0;
+  }
+
+  /* Checklist */
+  .checklist { list-style: none; }
+  .check-item {
+    display: flex; align-items: flex-start; gap: 12px; padding: 12px 0;
+    border-bottom: 1px dashed var(--line); cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-item:hover .check-box { border-color: var(--accent); }
+  .check-box {
+    width: 18px; height: 18px; border: 1px solid var(--ink-faint);
+    flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; background: var(--bg);
+  }
+  .check-item.done .check-box {
+    background: var(--accent); border-color: var(--accent);
+  }
+  .check-item.done .check-box::after {
+    content: "✓"; color: var(--bg); font-size: 13px; font-weight: 600;
+  }
+  .check-item.done .check-label { color: var(--ink-mute); text-decoration: line-through; text-decoration-color: var(--ink-faint); }
+  .check-content { flex: 1; }
+  .check-label { font-family: var(--cn); font-size: 13.5px; color: var(--ink); display: block; line-height: 1.4; }
+  .check-detail { font-size: 11px; color: var(--ink-mute); margin-top: 2px; line-height: 1.45; font-family: var(--mono); }
+
+  /* Counters */
+  .counters { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .counter {
+    background: var(--bg-elev); padding: 18px; border: 1px solid var(--line);
+    text-align: center;
+  }
+  .counter .val {
+    font-family: var(--serif); font-size: 36px; line-height: 1; color: var(--ink);
+    font-style: italic; display: block;
+  }
+  .counter .val.has-val { color: var(--accent); }
+  .counter .label {
+    font-family: var(--cn); font-size: 10.5px; letter-spacing: 0.15em;
+    color: var(--ink-mute); margin-top: 8px; text-transform: uppercase;
+  }
+  .counter .target {
+    font-size: 10px; color: var(--ink-faint); margin-top: 4px; font-family: var(--mono);
+  }
+  .counter-controls {
+    display: flex; justify-content: center; gap: 4px; margin-top: 10px;
+  }
+  .counter-btn {
+    background: transparent; border: 1px solid var(--line); color: var(--ink-mute);
+    width: 26px; height: 22px; cursor: pointer; font-family: var(--mono);
+    font-size: 12px; transition: all 0.15s;
+  }
+  .counter-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Milestones */
+  .milestones { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .milestone {
+    background: var(--bg-elev); padding: 16px 18px; border: 1px solid var(--line);
+    border-left: 2px solid var(--warn);
+  }
+  .milestone.urgent { border-left-color: var(--accent); }
+  .milestone.passed { opacity: 0.4; border-left-color: var(--ink-faint); }
+  .milestone .ms-date {
+    font-family: var(--serif); font-size: 22px; font-style: italic; line-height: 1;
+  }
+  .milestone .ms-label {
+    font-family: var(--cn); font-size: 11.5px; color: var(--ink-mute);
+    margin-top: 4px; line-height: 1.4;
+  }
+  .milestone .ms-countdown {
+    font-size: 10px; letter-spacing: 0.1em; color: var(--warn);
+    margin-top: 8px; text-transform: uppercase;
+  }
+  .milestone.urgent .ms-countdown { color: var(--accent); }
+  .milestone.passed .ms-countdown { color: var(--ink-faint); }
+
+  /* Weekly */
+  .weekly-card { margin-bottom: 24px; }
+  .week-row {
+    display: flex; gap: 24px; align-items: center; padding: 8px 0;
+    border-bottom: 1px dashed var(--line); cursor: pointer;
+  }
+  .week-row:last-child { border-bottom: none; }
+  .week-row .check-box { width: 16px; height: 16px; }
+
+  /* Checkpoint */
+  .checkpoint-card { margin-bottom: 24px; }
+  .checkpoint-list { list-style: none; }
+  .checkpoint-list li {
+    padding: 6px 0; padding-left: 18px; position: relative; font-family: var(--cn);
+    font-size: 12.5px; color: var(--ink); line-height: 1.5;
+  }
+  .checkpoint-list li::before {
+    content: "□"; position: absolute; left: 0; color: var(--ink-mute); font-family: var(--mono);
+  }
+
+  /* Notes */
+  .notes-card { margin-bottom: 24px; }
+  .notes-input {
+    width: 100%; background: var(--bg); border: 1px solid var(--line);
+    color: var(--ink); font-family: var(--mono); font-size: 13px;
+    padding: 12px 14px; resize: vertical; min-height: 80px;
+    line-height: 1.6; transition: border-color 0.15s;
+  }
+  .notes-input:focus { outline: none; border-color: var(--accent); }
+  .notes-status { font-size: 10.5px; color: var(--ink-mute); margin-top: 6px; }
+
+  /* Quick links */
+  .links-card { margin-bottom: 24px; }
+  .links-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px;
+  }
+  .quick-link {
+    display: block; padding: 10px 14px; background: var(--bg-elev);
+    border: 1px solid var(--line); color: var(--ink); text-decoration: none;
+    font-size: 12px; transition: all 0.15s;
+  }
+  .quick-link:hover { border-color: var(--accent); color: var(--accent); }
+  .quick-link .lk-name { display: block; font-weight: 500; }
+  .quick-link .lk-desc { display: block; font-size: 10px; color: var(--ink-mute); margin-top: 2px; }
+
+  /* Principles footer */
+  .principles {
+    margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--line);
+  }
+  .principles-title {
+    font-family: var(--serif); font-size: 22px; font-style: italic;
+    margin-bottom: 20px; color: var(--ink);
+  }
+  .principles-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+  }
+  .principle {
+    font-family: var(--cn); font-size: 12.5px; color: var(--ink-mute); line-height: 1.6;
+    border-left: 1px solid var(--line); padding-left: 16px;
+  }
+  .principle b { color: var(--ink); font-weight: 600; }
+
+  /* Phase progress */
+  .progress-meta {
+    display: flex; justify-content: space-between; font-size: 11px;
+    color: var(--ink-mute); margin-top: 16px;
+  }
+  .progress-bar {
+    height: 4px; background: var(--bg-elev); position: relative; margin-top: 8px;
+    border: 1px solid var(--line);
+  }
+  .progress-fill {
+    position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent);
+    transition: width 0.4s ease;
+  }
+
+  /* Status pill */
+  .status-pill {
+    display: inline-block; font-size: 10px; letter-spacing: 0.2em;
+    padding: 3px 10px; text-transform: uppercase; border: 1px solid;
+    margin-left: 12px; vertical-align: middle;
+  }
+  .status-pill.no-apply { color: var(--warn); border-color: var(--warn); }
+  .status-pill.apply { color: var(--accent); border-color: var(--accent); background: var(--accent-faint); }
+
+  /* Reset link */
+  .reset-link {
+    text-align: center; margin-top: 40px; font-size: 10.5px; color: var(--ink-faint);
+  }
+  .reset-link button {
+    background: none; border: none; color: var(--ink-faint); font-family: var(--mono);
+    font-size: 10.5px; cursor: pointer; letter-spacing: 0.15em; text-transform: uppercase;
+  }
+  .reset-link button:hover { color: var(--accent); }
+
+  /* Loading */
+  .loading { opacity: 0; transition: opacity 0.3s; }
+  .loaded { opacity: 1; }
+
+  /* Today recommendations */
+  .today-recos {
+    margin-top: 18px; padding: 16px 18px; background: var(--bg-elev);
+    border-left: 2px solid var(--accent);
+  }
+  .today-recos .reco-label {
+    font-family: var(--cn); font-size: 10.5px; letter-spacing: 0.2em;
+    color: var(--accent); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .reco-prob {
+    display: flex; align-items: center; gap: 10px; padding: 6px 0;
+    border-bottom: 1px dashed var(--line); font-size: 12.5px;
+  }
+  .reco-prob:last-child { border-bottom: none; }
+  .reco-prob .reco-num { color: var(--accent); font-family: var(--serif); font-style: italic; font-size: 16px; min-width: 18px; }
+  .reco-prob .reco-name { flex: 1; color: var(--ink); }
+  .reco-prob .reco-pat { color: var(--ink-mute); font-size: 10.5px; }
+  .reco-prob .diff { font-size: 9.5px; letter-spacing: 0.1em; padding: 2px 6px; border: 1px solid; text-transform: uppercase; }
+  .reco-prob a { color: var(--accent); text-decoration: none; font-size: 11px; border-bottom: 1px dotted var(--accent); }
+  .reco-prob a:hover { color: var(--ink); }
+  .reco-empty { font-family: var(--cn); font-size: 12px; color: var(--ink-mute); padding: 8px 0; }
+
+  /* Roadmap card */
+  .roadmap-card { margin-bottom: 24px; }
+  .roadmap-summary {
+    display: flex; align-items: baseline; gap: 16px; margin-bottom: 18px;
+    padding-bottom: 14px; border-bottom: 1px dashed var(--line);
+  }
+  .roadmap-total {
+    font-family: var(--serif); font-style: italic; font-size: 28px; color: var(--accent);
+    line-height: 1;
+  }
+  .roadmap-total .of { color: var(--ink-mute); font-size: 16px; font-style: normal; font-family: var(--mono); }
+  .roadmap-breakdown {
+    font-size: 11px; color: var(--ink-mute); display: flex; gap: 16px;
+  }
+  .roadmap-breakdown b { color: var(--ink); font-weight: 500; }
+  .roadmap-filters {
+    display: flex; gap: 6px; margin-left: auto;
+  }
+  .filter-chip {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    padding: 4px 10px; background: transparent; border: 1px solid var(--line);
+    color: var(--ink-mute); cursor: pointer; transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .filter-chip:hover { color: var(--ink); border-color: var(--ink-mute); }
+  .filter-chip.active { background: var(--accent-faint); border-color: var(--accent); color: var(--accent); }
+
+  .pattern-block {
+    border-bottom: 1px dashed var(--line);
+  }
+  .pattern-block:last-child { border-bottom: none; }
+  .pattern-header {
+    display: flex; align-items: center; gap: 12px; padding: 12px 0;
+    cursor: pointer; transition: opacity 0.15s; user-select: none;
+  }
+  .pattern-header:hover { opacity: 0.85; }
+  .pattern-header .caret {
+    color: var(--ink-mute); font-family: var(--mono); transition: transform 0.2s;
+    width: 12px; text-align: center;
+  }
+  .pattern-block.expanded .caret { transform: rotate(90deg); }
+  .pattern-header .pat-name {
+    font-family: var(--cn); font-size: 14px; color: var(--ink); flex: 1;
+  }
+  .pattern-block.in-phase .pat-name { color: var(--accent); }
+  .pattern-header .pat-count {
+    font-family: var(--mono); font-size: 11px; color: var(--ink-mute);
+  }
+  .pattern-header .pat-bar {
+    width: 80px; height: 3px; background: var(--bg-elev); position: relative;
+    border: 1px solid var(--line);
+  }
+  .pattern-header .pat-bar-fill {
+    position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent);
+  }
+  .pattern-problems {
+    display: none; padding: 4px 0 12px 24px;
+  }
+  .pattern-block.expanded .pattern-problems { display: block; }
+
+  .prob-row {
+    display: grid; grid-template-columns: 18px 1fr auto auto auto;
+    align-items: center; gap: 12px; padding: 7px 0;
+    font-size: 12.5px;
+  }
+  .prob-row .prob-check {
+    width: 16px; height: 16px; border: 1px solid var(--ink-faint);
+    background: var(--bg); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .prob-row .prob-check:hover { border-color: var(--accent); }
+  .prob-row.solved .prob-check { background: var(--accent); border-color: var(--accent); }
+  .prob-row.solved .prob-check::after { content: "✓"; color: var(--bg); font-size: 11px; font-weight: 600; }
+  .prob-row .prob-name {
+    color: var(--ink); font-family: var(--mono);
+  }
+  .prob-row.solved .prob-name { color: var(--ink-mute); text-decoration: line-through; text-decoration-color: var(--ink-faint); }
+  .diff {
+    font-size: 9.5px; letter-spacing: 0.1em; padding: 2px 7px;
+    border: 1px solid; text-transform: uppercase; font-family: var(--mono);
+  }
+  .diff.Easy { color: var(--done); border-color: var(--done); }
+  .diff.Medium { color: var(--warn); border-color: var(--warn); }
+  .diff.Hard { color: var(--accent); border-color: var(--accent); }
+  .prob-row .prob-link {
+    color: var(--ink-mute); text-decoration: none; font-size: 10.5px;
+    font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 2px 6px; border: 1px solid var(--line); transition: all 0.15s;
+  }
+  .prob-row .prob-link:hover { color: var(--accent); border-color: var(--accent); }
+  .prob-row.hidden { display: none; }
+
+  /* Settings drawer */
+  .settings-btn {
+    background: none; border: 1px solid var(--line); color: var(--ink-mute);
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.15em;
+    padding: 4px 10px; cursor: pointer; text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .settings-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  .settings-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    z-index: 100; display: none; align-items: flex-start; justify-content: center;
+    padding-top: 80px;
+  }
+  .settings-overlay.open { display: flex; }
+  .settings-panel {
+    background: var(--bg-card); border: 1px solid var(--line); padding: 32px;
+    max-width: 480px; width: 92%; position: relative;
+  }
+  .settings-panel h3 {
+    font-family: var(--serif); font-size: 22px; font-style: italic;
+    margin-bottom: 20px; color: var(--accent); font-weight: 400;
+  }
+  .settings-row { margin-bottom: 20px; }
+  .settings-row label {
+    display: block; font-family: var(--cn); font-size: 11px; letter-spacing: 0.2em;
+    color: var(--ink-mute); text-transform: uppercase; margin-bottom: 8px;
+  }
+  .settings-row input[type="date"] {
+    background: var(--bg); border: 1px solid var(--line); color: var(--ink);
+    font-family: var(--mono); font-size: 14px; padding: 10px 12px; width: 100%;
+    color-scheme: dark;
+  }
+  .settings-row input[type="date"]:focus { outline: none; border-color: var(--accent); }
+  .settings-row .help {
+    font-family: var(--cn); font-size: 11.5px; color: var(--ink-mute);
+    margin-top: 6px; line-height: 1.5;
+  }
+  .settings-actions {
+    display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px;
+    padding-top: 20px; border-top: 1px solid var(--line);
+  }
+  .settings-actions button {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em;
+    padding: 8px 16px; cursor: pointer; text-transform: uppercase;
+    transition: all 0.15s; background: transparent;
+  }
+  .btn-secondary { border: 1px solid var(--line); color: var(--ink-mute); }
+  .btn-secondary:hover { color: var(--ink); border-color: var(--ink-mute); }
+  .btn-primary { border: 1px solid var(--accent); color: var(--accent); }
+  .btn-primary:hover { background: var(--accent); color: var(--bg); }
+  .settings-meta {
+    font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint);
+    margin-top: 16px;
+  }
+  .settings-meta b { color: var(--ink-mute); font-weight: 400; }
+
+  /* Roadmap diagram */
+  .roadmap-diagram-wrap {
+    margin-bottom: 24px; padding: 20px 0;
+    border-bottom: 1px dashed var(--line);
+    overflow-x: auto;
+  }
+  .roadmap-diagram-wrap .dgr-label {
+    font-family: var(--cn); font-size: 10.5px; letter-spacing: 0.2em;
+    color: var(--ink-mute); text-transform: uppercase; margin-bottom: 12px;
+  }
+  .roadmap-diagram-wrap svg { width: 100%; height: auto; min-width: 700px; display: block; }
+  .dgr-node-bg {
+    cursor: pointer; transition: stroke-width 0.15s;
+  }
+  .dgr-node-bg:hover { stroke-width: 2; }
+  .dgr-node-text { pointer-events: none; }
+  .dgr-edge { stroke: var(--ink-faint); fill: none; stroke-width: 1; }
+  .dgr-edge.active { stroke: var(--accent); stroke-width: 1.5; }
+
+  /* ========== TUTORIAL ========== */
+  .tour-blocker {
+    position: fixed; inset: 0; z-index: 1000;
+    display: none; background: rgba(0,0,0,0.78);
+    pointer-events: auto;
+  }
+  .tour-blocker.active { display: block; }
+  .tour-blocker.has-spotlight { background: transparent; }
+
+  .tour-spotlight {
+    position: absolute; border-radius: 6px;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.78);
+    pointer-events: none;
+    transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease;
+    display: none;
+  }
+  .tour-blocker.has-spotlight .tour-spotlight { display: block; }
+
+  .tour-tooltip {
+    position: absolute;
+    background: var(--bg-card); border: 1px solid var(--accent);
+    padding: 26px 30px; max-width: 400px; width: 92%;
+    z-index: 1002; pointer-events: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .tour-blocker:not(.has-spotlight) .tour-tooltip {
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    max-width: 460px;
+  }
+  .tour-tooltip h4 {
+    font-family: var(--serif); font-size: 22px; font-style: italic;
+    color: var(--accent); margin-bottom: 10px; font-weight: 400;
+    line-height: 1.25;
+  }
+  .tour-tooltip p {
+    font-family: var(--cn); font-size: 13.5px; line-height: 1.6;
+    color: var(--ink); margin-bottom: 0;
+  }
+  .tour-tooltip p b { color: var(--accent); }
+  .tour-tooltip .tour-extra { margin-top: 16px; }
+  .tour-tooltip .tour-extra label {
+    display: block; font-family: var(--cn); font-size: 11px;
+    letter-spacing: 0.2em; color: var(--ink-mute);
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  .tour-tooltip .tour-extra input[type="date"] {
+    background: var(--bg); border: 1px solid var(--line); color: var(--ink);
+    font-family: var(--mono); font-size: 14px; padding: 10px 12px; width: 100%;
+    color-scheme: dark;
+  }
+  .tour-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line);
+  }
+  .tour-progress {
+    font-family: var(--mono); font-size: 10.5px;
+    color: var(--ink-mute); letter-spacing: 0.15em;
+  }
+  .tour-actions { display: flex; gap: 10px; }
+  .tour-actions button {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em;
+    padding: 8px 16px; cursor: pointer; text-transform: uppercase;
+    background: transparent; transition: all 0.15s;
+  }
+  .tour-langs {
+    display: flex; gap: 14px; justify-content: center; margin-top: 24px;
+  }
+  .tour-langs button {
+    font-family: var(--cn); font-size: 16px; letter-spacing: 0.05em;
+    padding: 16px 32px; cursor: pointer;
+    background: transparent; color: var(--ink);
+    border: 1px solid var(--line); transition: all 0.15s;
+    min-width: 140px;
+  }
+  .tour-langs button:hover {
+    border-color: var(--accent); color: var(--accent);
+    transform: translateY(-1px);
+  }
+  .tour-bilingual-title {
+    text-align: center; line-height: 1.3;
+  }
+  .tour-bilingual-title .alt {
+    display: block; font-size: 0.7em; opacity: 0.55;
+    font-style: normal; margin-top: 4px;
+  }
+  .tour-bilingual-sub {
+    text-align: center; font-family: var(--cn); font-size: 13px;
+    color: var(--ink-mute); margin-top: 6px; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="container loading" id="root">
+
+  <header class="header">
+    <div class="header-left">
+      <h1 id="app-title">10周<span class="accent">作战</span>日志</h1>
+      <div class="sub" id="app-subtitle">5/11 — 7/19 · interview prep tracker</div>
+    </div>
+    <div class="header-right">
+      <div class="date" id="header-date">—</div>
+      <div class="day-label" id="header-day">—</div>
+    </div>
+  </header>
+
+  <div class="phase-strip-wrap">
+    <div class="phase-mode-bar">
+      <span class="mode-label" id="phase-mode-label">—</span>
+      <span class="hint" id="phase-click-hint">—</span>
+      <button class="auto-btn hidden" id="phase-auto-btn" onclick="resetToAuto()">—</button>
+    </div>
+    <div class="phase-strip" id="phase-strip"></div>
+  </div>
+
+  <section class="today-card">
+    <div class="today-title" id="today-title">—</div>
+    <div class="today-focus" id="today-focus">—</div>
+    <div id="today-action-wrap"></div>
+    <div id="today-recos-wrap"></div>
+  </section>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">
+        <span id="daily-title">—</span>
+        <span class="num-badge" id="daily-progress">—</span>
+      </div>
+      <ul class="checklist" id="daily-checklist"></ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span id="totals-title">—</span>
+      </div>
+      <div class="counters" id="counters"></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card weekly-card">
+      <div class="card-title">
+        <span id="weekly-title">—</span>
+        <span class="num-badge" id="weekly-progress">—</span>
+      </div>
+      <ul class="checklist" id="weekly-checklist"></ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span id="milestones-title">—</span></div>
+      <div class="milestones" id="milestones"></div>
+    </div>
+  </div>
+
+  <div class="card checkpoint-card">
+    <div class="card-title">
+      <span id="checkpoint-title">—</span>
+      <span id="phase-progress-meta" class="num-badge">—</span>
+    </div>
+    <ul class="checkpoint-list" id="checkpoint-list"></ul>
+    <div class="progress-bar"><div class="progress-fill" id="phase-progress-fill" style="width:0%"></div></div>
+    <div class="progress-meta">
+      <span id="phase-day-meta">—</span>
+      <span id="phase-end-meta">—</span>
+    </div>
+  </div>
+
+  <div class="card notes-card">
+    <div class="card-title"><span id="notes-title">—</span></div>
+    <textarea class="notes-input" id="notes" placeholder=""></textarea>
+    <div class="notes-status" id="notes-status">—</div>
+  </div>
+
+  <div class="card links-card">
+    <div class="card-title"><span id="links-title">—</span></div>
+    <div class="links-grid" id="links-grid"></div>
+  </div>
+
+  <div class="card roadmap-card">
+    <div class="card-title">
+      <span id="roadmap-title">—</span>
+      <span class="num-badge" id="roadmap-progress">—</span>
+    </div>
+    <div class="roadmap-summary">
+      <div class="roadmap-total" id="roadmap-total">0<span class="of"> / 150</span></div>
+      <div class="roadmap-breakdown" id="roadmap-breakdown">—</div>
+      <div class="roadmap-filters" id="roadmap-filters"></div>
+    </div>
+    <div class="roadmap-diagram-wrap">
+      <div class="dgr-label" id="diagram-label">—</div>
+      <div id="roadmap-diagram"></div>
+    </div>
+    <div id="roadmap-body"></div>
+  </div>
+
+  <div class="principles">
+    <div class="principles-title" id="principles-title">—</div>
+    <div class="principles-grid" id="principles-grid"></div>
+  </div>
+
+  <div class="reset-link">
+    <button class="settings-btn" id="lang-btn" onclick="toggleLang()">EN</button>
+    &nbsp;&nbsp;
+    <button class="settings-btn" id="settings-btn-el" onclick="openSettings()">⚙ 设置</button>
+    &nbsp;&nbsp;
+    <button id="reset-btn-el" onclick="resetAll()">⟲ reset all data</button>
+  </div>
+
+  <!-- Settings Drawer -->
+  <div class="settings-overlay" id="settings-overlay" onclick="if(event.target===this)closeSettings()">
+    <div class="settings-panel">
+      <h3 id="settings-h">—</h3>
+      <div class="settings-row">
+        <label id="settings-lang-label">—</label>
+        <div style="display:flex;gap:8px;">
+          <button id="lang-opt-zh" class="filter-chip" onclick="pickLang('zh')">中文</button>
+          <button id="lang-opt-en" class="filter-chip" onclick="pickLang('en')">English</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <label id="settings-startdate-label">—</label>
+        <input type="date" id="settings-startdate" />
+        <div class="help" id="settings-startdate-help">—</div>
+      </div>
+      <div class="settings-meta">
+        <span id="settings-storage-backend-label">—</span><b id="storage-backend">—</b><br>
+        <span id="settings-total-days-label">—</span><b id="settings-total-days-val">—</b><br>
+        <br>
+        <a href="#" id="settings-show-tour-link" onclick="event.preventDefault(); closeSettings(); startTour();" style="color: var(--accent); text-decoration: none; border-bottom: 1px dashed var(--accent);">—</a>
+      </div>
+      <div class="settings-actions">
+        <button class="btn-secondary" id="settings-cancel" onclick="closeSettings()">—</button>
+        <button class="btn-primary" id="settings-save" onclick="saveSettingsForm()">—</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tutorial Overlay -->
+  <div class="tour-blocker" id="tour-blocker">
+    <div class="tour-spotlight" id="tour-spotlight"></div>
+    <div class="tour-tooltip" id="tour-tooltip"></div>
+  </div>
+
+</div>
+
+<script>
+  // ========== I18N ==========
+  const I18N = {
+    zh: {
+      // Header
+      app_title_html: '10周<span class="accent">作战</span>日志',
+      app_subtitle: 'interview prep tracker',
+      // Phase strip
+      phase_mode_auto: '阶段 · 跟随日期',
+      phase_mode_manual_prefix: '阶段 · ',
+      phase_mode_manual_locked: '手动锁定',
+      phase_mode_manual_suffix: ' · 自动为 ',
+      phase_click_hint: '点击切换 · click to switch',
+      back_to_auto: '↺ 回到自动',
+      auto_before_start: '尚未开始',
+      auto_after_end: '已结束',
+      // Today card
+      today_label: '今日',
+      apply_yes: '✓ 可投简历',
+      apply_no: '⊘ 不投简历',
+      // Card titles
+      daily_title: '今日清单 · daily',
+      totals_title: '累计 · totals',
+      weekly_title: '本周固定 · weekly',
+      milestones_title: '关键日期 · milestones',
+      checkpoint_title: '本阶段验收 · phase checkpoint',
+      notes_title: '今日笔记 · scratch',
+      links_title: '快速链接 · quicklinks',
+      roadmap_title: '题库 · neetcode roadmap',
+      principles_title: '几条反直觉原则',
+      // Roadmap
+      diagram_label: '依赖图 · dependency graph (点击 pattern 跳转下方)',
+      filter_all: 'All', filter_unsolved: '未解', filter_easy: 'Easy', filter_med: 'Med', filter_hard: 'Hard',
+      reco_title: '今日推荐 · next up',
+      reco_empty: '🎉 NeetCode 150 全部完成. 去做公司 tag 高频题, 或重做错过的.',
+      // Counters
+      counter_target_prefix: '目标 ',
+      // Notes
+      notes_placeholder: '今天卡在哪? 明天先做什么? 面试反馈? 随便写.',
+      notes_loaded: '已加载', notes_empty: '空', notes_saving: '...', notes_saved_at: '已保存 · ',
+      // Bottom buttons
+      settings_btn: '⚙ 设置', reset_btn: '⟲ reset all data',
+      lang_btn_other: 'EN',
+      // Settings
+      settings_h: '设置 · settings',
+      settings_lang_label: '语言 · language',
+      settings_lang_zh: '中文', settings_lang_en: 'English',
+      settings_startdate_label: '开始日期 · start date',
+      settings_startdate_help: '这是 Phase 1 Day 1 的日期。改了它, 所有 phase 边界 / 验收日 / 里程碑会按这个日期重排 (每个 phase 14 天)。<br>你之前的勾选、笔记、题库进度都不会丢——它们是按真实日历日期存的。',
+      settings_storage_backend: '存储后端: ',
+      settings_total_days: '总天数: ',
+      settings_total_days_val: '70 (10 周)',
+      settings_storage_claude: 'Claude (window.storage)', settings_storage_local: 'Browser localStorage',
+      settings_cancel: '取消', settings_save: '保存',
+      // Day labels
+      day_of_70: 'Day {0} of 70 · {1} Day {2}',
+      before_start_n: '距 Phase 1 开始 {0} 天',
+      plan_complete: '计划已完成 · 持续推进',
+      // Milestones
+      ms_practice_start: '开始投练手公司',
+      ms_target_start: '开始投目标公司',
+      ms_phase_n_check: 'Phase {0} 验收',
+      ms_plan_end: '计划终点',
+      ms_today: '就是今天', ms_passed: '已过 {0} 天', ms_in: '{0} 天后',
+      // Checkpoint
+      cp_preview_not_started: '预览模式 · 阶段尚未开始',
+      cp_preview_ended: '预览模式 · 阶段已结束',
+      cp_starts_in: '开始: {0} · {1} 天后',
+      cp_ended_ago: '结束: {0} · 已过 {1} 天',
+      cp_phase1_not_started: 'Phase 1 还没开始',
+      cp_starts: '开始: {0}',
+      cp_day_x_of_y: '第 {0} / {1} 天',
+      cp_days_to_check: '{0} 天后验收',
+      cp_phase_ended: '阶段已过',
+      // Confirmations
+      confirm_reset: '确认清空所有数据? (清单 / 笔记 / 累计计数 / 题库)',
+      // Day 1 special action
+      day1_action_label: 'Day 1 · 现在就做这五步',
+      // Phase 3 / 4 / Sunday special blocks
+      p3_label: '⚑ Phase 3 第 1 周 · 开始投练手公司',
+      p4_label: '⚑ Phase 4 启动 · 投目标公司',
+      sun_label: '▽ 周日 · 必做周回顾',
+      // Misc
+      manual_marker: 'M',
+      // Tutorial
+      tour_next: '下一步', tour_skip: '跳过', tour_start: '开始',
+      tour_lang_prompt: '请选择语言', tour_lang_prompt_alt: 'Pick your language',
+      tour_date_label: '开始日期 · Phase 1 Day 1',
+      tour_set_date: '确认 · next',
+      tour_w_title: '欢迎来到 10 周作战日志',
+      tour_w_body: '这是一个 70 天面试冲刺的执行工具——5 个 phase, 每 phase 14 天, 自动告诉你今天该做什么。<br><br>先选一个开始日期, 然后我用 1 分钟带你过一遍。',
+      tour_t_title: '今日 · 每天打开看这里',
+      tour_t_body: '根据当前日期自动算出: 你在哪个 phase, 今天的重点, 该不该投简历。<b>Day 1 / phase 切换日 / 每周日</b>还会显示特殊行动指引。',
+      tour_p_title: '10 周时间线',
+      tour_p_body: '5 个 phase, 每个 14 天。<b>点任意 phase</b> 可以预览/手动锁定到那个阶段; <b>点 ↺</b> 回到自动跟随日期模式。',
+      tour_r_title: '题库 · NeetCode 150',
+      tour_r_body: '上面是 18 个 pattern 的<b>依赖图</b>——点节点跳到对应题目, 越解越橙。下面是全 150 题, LeetCode + NeetCode 解法链接全有, 勾选自动 +1 LC 计数。',
+      tour_today_reco_title: '今日推荐 · 不知道做啥就看这里',
+      tour_today_reco_body: '根据当前 phase 的 pattern 焦点自动挑两道未解的题。点 <b>LC</b> 开始, 解完上面打勾。',
+      tour_s_title: '设置 + 语言切换',
+      tour_s_body: '<b>⚙ 设置</b>: 改开始日期 / 切语言 / 看 tutorial。<br><b>EN/中</b>: 一键切换语言。<br><br>所有数据存在你浏览器里, 没人能看到——包括我。',
+      tour_d_title: '准备好了 · 开始 Day 1',
+      tour_d_body: '每天开一次。第一件事: 看顶部"今日推荐", 点 LC 链接, 开始第一道题。<br><br>记住一条: <b>90% 时间在做, 不在选</b>。',
+      tour_d_btn: '开始使用',
+      // Settings "Show tutorial again"
+      settings_show_tour: '重新看一遍 tutorial',
+    },
+    en: {
+      app_title_html: '10-Week <span class="accent">Battle</span> Log',
+      app_subtitle: 'interview prep tracker',
+      phase_mode_auto: 'Phase · auto by date',
+      phase_mode_manual_prefix: 'Phase · ',
+      phase_mode_manual_locked: 'manually locked',
+      phase_mode_manual_suffix: ' · auto = ',
+      phase_click_hint: 'click to switch',
+      back_to_auto: '↺ back to auto',
+      auto_before_start: 'not started',
+      auto_after_end: 'ended',
+      today_label: 'TODAY',
+      apply_yes: '✓ Apply now',
+      apply_no: '⊘ Hold applications',
+      daily_title: 'Daily checklist',
+      totals_title: 'Totals',
+      weekly_title: 'Weekly fixed',
+      milestones_title: 'Key dates',
+      checkpoint_title: 'Phase checkpoint',
+      notes_title: "Today's notes",
+      links_title: 'Quick links',
+      roadmap_title: 'NeetCode roadmap',
+      principles_title: 'Counterintuitive principles',
+      diagram_label: 'Dependency graph (click a pattern to jump below)',
+      filter_all: 'All', filter_unsolved: 'Unsolved', filter_easy: 'Easy', filter_med: 'Med', filter_hard: 'Hard',
+      reco_title: "Today's recommended · next up",
+      reco_empty: '🎉 NeetCode 150 complete. Move to company-tagged high-freq problems, or redo missed ones.',
+      counter_target_prefix: 'target ',
+      notes_placeholder: 'Stuck on what? What to do first tomorrow? Interview feedback? Anything.',
+      notes_loaded: 'loaded', notes_empty: 'empty', notes_saving: '...', notes_saved_at: 'saved · ',
+      settings_btn: '⚙ settings', reset_btn: '⟲ reset all data',
+      lang_btn_other: '中',
+      settings_h: 'Settings',
+      settings_lang_label: 'Language',
+      settings_lang_zh: '中文', settings_lang_en: 'English',
+      settings_startdate_label: 'Start date',
+      settings_startdate_help: 'The date of Phase 1 Day 1. Changing this re-flows all phase boundaries, checkpoint days, and milestones (each phase is 14 days).<br>Your existing checks, notes, and roadmap progress are preserved — they\'re stored by real calendar date.',
+      settings_storage_backend: 'Storage backend: ',
+      settings_total_days: 'Total days: ',
+      settings_total_days_val: '70 (10 weeks)',
+      settings_storage_claude: 'Claude (window.storage)', settings_storage_local: 'Browser localStorage',
+      settings_cancel: 'Cancel', settings_save: 'Save',
+      day_of_70: 'Day {0} of 70 · {1} Day {2}',
+      before_start_n: '{0} days until Phase 1 starts',
+      plan_complete: 'Plan complete · keep going',
+      ms_practice_start: 'Start practice apps',
+      ms_target_start: 'Start target apps',
+      ms_phase_n_check: 'Phase {0} checkpoint',
+      ms_plan_end: 'Plan end',
+      ms_today: 'today', ms_passed: '{0} days ago', ms_in: 'in {0} days',
+      cp_preview_not_started: 'Preview mode · phase not started',
+      cp_preview_ended: 'Preview mode · phase ended',
+      cp_starts_in: 'starts {0} · in {1} days',
+      cp_ended_ago: 'ended {0} · {1} days ago',
+      cp_phase1_not_started: 'Phase 1 not started',
+      cp_starts: 'starts {0}',
+      cp_day_x_of_y: 'Day {0} / {1}',
+      cp_days_to_check: '{0} days to checkpoint',
+      cp_phase_ended: 'phase ended',
+      confirm_reset: 'Confirm wipe all data? (checks / notes / counters / roadmap)',
+      day1_action_label: 'Day 1 · do these 5 steps now',
+      p3_label: '⚑ Phase 3 Week 1 · Start practice apps',
+      p4_label: '⚑ Phase 4 launch · Apply to target companies',
+      sun_label: "▽ Sunday · Weekly review (required)",
+      manual_marker: 'M',
+      tour_next: 'Next', tour_skip: 'Skip', tour_start: 'Start',
+      tour_lang_prompt: 'Pick your language', tour_lang_prompt_alt: '请选择语言',
+      tour_date_label: 'Start date · Phase 1 Day 1',
+      tour_set_date: 'Confirm · next',
+      tour_w_title: 'Welcome to the 10-Week Battle Log',
+      tour_w_body: 'A 70-day interview sprint execution tool — 5 phases, 14 days each, auto-tells you what to focus on today.<br><br>Pick a start date and I\'ll walk you through it in 1 minute.',
+      tour_t_title: 'Today · open this card every day',
+      tour_t_body: 'Auto-derived from today\'s date: which phase you\'re in, what to focus on, whether to apply yet. <b>Day 1, phase-transition days, and every Sunday</b> show special action steps here.',
+      tour_p_title: '10-Week Timeline',
+      tour_p_body: '5 phases, 14 days each. <b>Click any phase</b> to preview or lock it manually; <b>click ↺</b> to return to auto-by-date mode.',
+      tour_r_title: 'Roadmap · NeetCode 150',
+      tour_r_body: 'Above is the <b>dependency graph</b> of all 18 patterns — click a node to jump to its problems, nodes get more orange as you solve. Below: all 150 problems with LeetCode + NeetCode links; checking one auto-bumps your LC counter.',
+      tour_today_reco_title: "Today's recommended · don't know what to do?",
+      tour_today_reco_body: "Based on your current phase's patterns, the next 2 unsolved problems are picked for you. Click <b>LC</b> to start, check the box above when done.",
+      tour_s_title: 'Settings + language',
+      tour_s_body: '<b>⚙ settings</b>: change start date / language / re-run tutorial.<br><b>EN/中</b>: one-tap language switch.<br><br>All data stays in your browser — no one can see it, including me.',
+      tour_d_title: "All set · start Day 1",
+      tour_d_body: "Open this every day. First action: look at \"Today's recommended\" at the top, click LC, start your first problem.<br><br>One thing to remember: <b>90% doing, not choosing</b>.",
+      tour_d_btn: "Let's go",
+      settings_show_tour: 'Show tutorial again',
+    },
+  };
+
+  function t(key) {
+    const dict = I18N[state.lang] || I18N.zh;
+    let str = dict[key] !== undefined ? dict[key] : (I18N.zh[key] || key);
+    for (let i = 1; i < arguments.length; i++) {
+      str = str.split('{' + (i - 1) + '}').join(arguments[i]);
+    }
+    return str;
+  }
+
+  function loc(obj) {
+    if (!obj) return '';
+    if (typeof obj === 'string') return obj;
+    return obj[state.lang] || obj.zh || obj.en || '';
+  }
+
+  // ========== PLAN CONFIG ==========
+  const DEFAULT_START = '2026-05-11'; // Original Day 1; user can override via settings.
+
+  // Phase content (dates are computed from startDate)
+  const PHASE_CONFIGS = [
+    { id: 1, name: 'Phase 1',
+      cn: { zh: '打基础', en: 'Foundation' },
+      focus: {
+        zh: 'LC 基础 + 简历 + 项目复盘',
+        en: 'LC basics + resume + project recap'
+      },
+      apply: false,
+      tasks: [
+        { id: 'lc',
+          label: { zh: 'LeetCode 2 题 (1.5–2 小时)', en: 'LeetCode 2 problems (1.5–2 hrs)' },
+          detail: {
+            zh: 'NeetCode: Arrays/Hashing → Two Pointers → Sliding Window. 第一题直接看视频, 不硬想',
+            en: 'NeetCode: Arrays/Hashing → Two Pointers → Sliding Window. First problem: watch video, don\'t grind.'
+          }
+        },
+        { id: 'eng',
+          label: { zh: '英文复述解法 (30 分钟)', en: 'Re-explain solution in English (30 min)' },
+          detail: {
+            zh: '对 Claude 语音说今天解的题, 不准用中文, 卡住等 5 秒再说',
+            en: 'Tell Claude voice mode your solution, English only, pause 5s if stuck.'
+          }
+        },
+        { id: 'infra',
+          label: { zh: '基础设施 (30 分钟)', en: 'Infrastructure (30 min)' },
+          detail: {
+            zh: '简历英文版 / 跟踪表 / LEO rover pitch 逐字稿',
+            en: 'English resume / app tracker / LEO rover pitch script'
+          }
+        },
+      ],
+      checkpoint: [
+        { zh: 'LC 做了 25+ 题', en: 'Solved 25+ LC problems' },
+        { zh: '能用英文流利讲一道 Two Pointers 题', en: 'Can fluently explain a Two Pointers problem in English' },
+        { zh: '简历英文版定稿', en: 'English resume finalized' },
+        { zh: '项目 pitch 第一版写完', en: 'Project pitch v1 written' },
+        { zh: '投递跟踪表建好', en: 'Application tracker built' }
+      ],
+    },
+    { id: 2, name: 'Phase 2',
+      cn: { zh: '补工具箱', en: 'Expand toolbox' },
+      focus: {
+        zh: 'LC 进阶 + STAR 故事 + 项目 pitch 打磨',
+        en: 'LC advanced + STAR stories + project pitch polish'
+      },
+      apply: false,
+      tasks: [
+        { id: 'lc',
+          label: { zh: 'LeetCode 2 题 (2 小时)', en: 'LeetCode 2 problems (2 hrs)' },
+          detail: {
+            zh: 'Stack → Binary Search → Linked List → Trees. 自己想 25–30 分钟再看答案',
+            en: 'Stack → Binary Search → Linked List → Trees. Think 25–30 min before peeking.'
+          }
+        },
+        { id: 'star',
+          label: { zh: 'Behavioral 准备 (45 分钟)', en: 'Behavioral prep (45 min)' },
+          detail: {
+            zh: 'Week 3 写 6 个 STAR 故事逐字稿; Week 4 每个录音 5 遍, 听回放改',
+            en: 'Week 3: write 6 STAR scripts. Week 4: record each 5×, replay & revise.'
+          }
+        },
+        { id: 'eng',
+          label: { zh: '英文口语 (15 分钟)', en: 'English speaking (15 min)' },
+          detail: { zh: '对 AI 语音模式', en: 'Use AI voice mode' }
+        },
+      ],
+      checkpoint: [
+        { zh: 'LC 50+ 题', en: 'Solved 50+ LC problems' },
+        { zh: '6 个 STAR 故事录音完成', en: '6 STAR stories recorded' },
+        { zh: '项目 pitch 5 分钟流利讲完 (录音验证)', en: '5-min project pitch fluent (verified by recording)' },
+        { zh: '至少 1 次 Pramp mock', en: 'At least 1 Pramp mock done' }
+      ],
+    },
+    { id: 3, name: 'Phase 3',
+      cn: { zh: '练手投递', en: 'Practice apps' },
+      focus: {
+        zh: '边投练手公司边补 — Skydio / Symbotic / Cruise / Aurora 等中型',
+        en: 'Apply to practice companies while leveling up — Skydio / Symbotic / Cruise / Aurora etc.'
+      },
+      apply: true, type: 'practice',
+      tasks: [
+        { id: 'lc',
+          label: { zh: 'LeetCode 1.5 小时', en: 'LeetCode 1.5 hrs' },
+          detail: {
+            zh: 'DP / Backtracking / Graph. 推进新题 + 复习老题',
+            en: 'DP / Backtracking / Graph. New problems + review old ones.'
+          }
+        },
+        { id: 'apply',
+          label: { zh: '投 3–5 家练手公司 (45 分钟)', en: 'Apply to 3–5 practice companies (45 min)' },
+          detail: {
+            zh: '简历针对 JD 微调关键词, LinkedIn 找内推 (校友 / 华人 employee)',
+            en: 'Tune resume keywords to each JD. Find referrals on LinkedIn (alumni / employees).'
+          }
+        },
+        { id: 'sd',
+          label: { zh: 'System Design 入门 (30 分钟)', en: 'System Design intro (30 min)' },
+          detail: {
+            zh: 'System Design Primer (GitHub) + ByteByteGo YouTube',
+            en: 'System Design Primer (GitHub) + ByteByteGo YouTube'
+          }
+        },
+        { id: 'review',
+          label: { zh: 'Behavioral / pitch 复习 (30 分钟)', en: 'Behavioral / pitch review (30 min)' },
+          detail: {
+            zh: '随时可能有电面, 保持 warm',
+            en: 'Phone screens can hit anytime — stay warm.'
+          }
+        },
+      ],
+      checkpoint: [
+        { zh: 'LC 80+ 题', en: 'Solved 80+ LC problems' },
+        { zh: '投了 20–30 家练手公司', en: 'Applied to 20–30 practice companies' },
+        { zh: '经历 1–2 次真实电面 / OA', en: 'Done 1–2 real phone screens / OAs' },
+        { zh: 'System design 基础: load balancer / cache / DB / queue 能讲', en: 'System design basics — can explain load balancer / cache / DB / queue' }
+      ],
+    },
+    { id: 4, name: 'Phase 4',
+      cn: { zh: '主战场', en: 'Main battlefield' },
+      focus: {
+        zh: '投目标公司 — NVIDIA / Apple / Google-Waymo / Meta RL / Qualcomm / Figure / 1X 等',
+        en: 'Apply to target companies — NVIDIA / Apple / Google–Waymo / Meta RL / Qualcomm / Figure / 1X etc.'
+      },
+      apply: true, type: 'target',
+      tasks: [
+        { id: 'lc',
+          label: { zh: 'LeetCode 1 小时', en: 'LeetCode 1 hr' },
+          detail: {
+            zh: '目标公司 tag 高频题 (LC Premium 此时最值)',
+            en: 'Company-tag high-freq problems (LC Premium most valuable here)'
+          }
+        },
+        { id: 'sd',
+          label: { zh: 'System Design + ML Sys (1 小时)', en: 'System Design + ML Sys (1 hr)' },
+          detail: {
+            zh: 'Designing ML Systems (Chip Huyen) 章节; 练: Jetson 实时人脸检测 / SLAM pipeline',
+            en: 'Designing ML Systems (Chip Huyen) chapters. Practice: real-time face detection on Jetson / SLAM pipeline.'
+          }
+        },
+        { id: 'apply',
+          label: { zh: '投 5 家目标公司 (1 小时)', en: 'Apply to 5 target companies (1 hr)' },
+          detail: {
+            zh: '所有第一梯队 + 第二梯队. 内推优先, myvisajobs 验证 sponsor',
+            en: 'All tier-1 + tier-2. Referrals first. Verify sponsor on myvisajobs.'
+          }
+        },
+        { id: 'mock',
+          label: { zh: 'Mock interview (每周 2 次)', en: 'Mock interview (2× / week)' },
+          detail: {
+            zh: '1 次 Pramp + 1 次 interviewing.io ($50–$100 值得)',
+            en: '1 Pramp + 1 interviewing.io ($50–$100 worth it)'
+          }
+        },
+      ],
+      checkpoint: [
+        { zh: 'LC 120+ 题', en: 'Solved 120+ LC problems' },
+        { zh: '投了所有目标公司', en: 'Applied to all target companies' },
+        { zh: '至少 1–2 个目标公司进入电面', en: 'At least 1–2 target companies in phone screen' },
+        { zh: 'System design 能讲 30 分钟不冷场', en: 'Can do 30-min system design without freezing' }
+      ],
+    },
+    { id: 5, name: 'Phase 5',
+      cn: { zh: '面试季', en: 'Interview season' },
+      focus: {
+        zh: '全力面试 + 谈判 — 真实面试主战场',
+        en: 'Full interview mode + negotiation — the real battleground'
+      },
+      apply: true, type: 'interview',
+      tasks: [
+        { id: 'next',
+          label: { zh: '针对下一场面试 deep dive', en: 'Deep dive for next interview' },
+          detail: {
+            zh: '明天 NVIDIA → 今天 NVIDIA 高频题 + 面经; 没面试 → 继续刷 + sys design',
+            en: 'Tomorrow NVIDIA → today: NVIDIA high-freq + interview reports. No interview → keep grinding + sys design.'
+          }
+        },
+        { id: 'negotiation',
+          label: { zh: '谈判准备', en: 'Negotiation prep' },
+          detail: {
+            zh: 'Patrick McKenzie 文读 3 遍 + levels.fyi 查目标 level 薪资分布',
+            en: 'Read Patrick McKenzie\'s article 3× + check target-level salary on levels.fyi'
+          }
+        },
+        { id: 'mental',
+          label: { zh: '心态管理', en: 'Mindset' },
+          detail: {
+            zh: '被拒是常态. Google 通过率 ~10%. 投 30 家拿 3 个 offer = 优秀',
+            en: 'Rejection is normal. Google passes ~10%. 30 apps → 3 offers = excellent.'
+          }
+        },
+      ],
+      checkpoint: [
+        { zh: '有 ≥2 个真实 onsite 在跑', en: '≥2 real onsites in progress' },
+        { zh: '拿到 ≥1 个 offer', en: 'Got ≥1 offer' },
+        { zh: '完成谈判轮 ≥1 次', en: 'Completed ≥1 negotiation round' }
+      ],
+    },
+  ];
+
+  function addDays(dateStr, n) {
+    const d = parseDate(dateStr);
+    d.setDate(d.getDate() + n);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function buildPhases(startDate) {
+    return PHASE_CONFIGS.map((cfg, i) => ({
+      ...cfg,
+      start: addDays(startDate, i * 14),
+      end: addDays(startDate, (i + 1) * 14 - 1),
+    }));
+  }
+
+  // PHASES is dynamic - rebuilt whenever startDate changes
+  let PHASES = buildPhases(DEFAULT_START);
+
+  const WEEKLY_TASKS = [
+    { id: 'review',
+      label: { zh: '周日回顾过去一周', en: 'Sunday: review the past week' },
+      detail: { zh: '做了多少题? 投了多少? 哪里卡住? 定下周计划', en: 'How many problems? Applications? Where stuck? Plan next week.' } },
+    { id: 'mock',
+      label: { zh: '≥1 次 mock interview', en: '≥1 mock interview' },
+      detail: { zh: 'Pramp 免费 · Phase 4+ 加付费', en: 'Pramp free · add paid in Phase 4+' } },
+    { id: 'voice',
+      label: { zh: '≥3 次 AI 语音英文', en: '≥3× AI voice English' },
+      detail: { zh: '哪怕只是 10 分钟', en: 'Even 10 min counts' } },
+    { id: 'tracker',
+      label: { zh: '追踪表更新', en: 'Update tracker' },
+      detail: { zh: '投了哪家 / 什么时间 / 什么状态', en: 'Which company / when / status' } },
+  ];
+
+  const COUNTERS = [
+    { id: 'lc',       label: { zh: 'LC 题数',    en: 'LC problems' },   target: 120, key: 'count_lc' },
+    { id: 'practice', label: { zh: '练手投递',   en: 'Practice apps' }, target: 30,  key: 'count_practice' },
+    { id: 'target',   label: { zh: '目标投递',   en: 'Target apps' },   target: 25,  key: 'count_target' },
+    { id: 'mocks',    label: { zh: 'Mock 次数',  en: 'Mocks done' },    target: 8,   key: 'count_mocks' },
+  ];
+
+  const DAY1_ACTION = {
+    steps: [
+      { zh: '打开 <a href="https://neetcode.io/roadmap" target="_blank">neetcode.io/roadmap</a>',
+        en: 'Open <a href="https://neetcode.io/roadmap" target="_blank">neetcode.io/roadmap</a>' },
+      { zh: '找到 Arrays & Hashing 的第一题: <b>Contains Duplicate</b>',
+        en: 'Find the first Arrays & Hashing problem: <b>Contains Duplicate</b>' },
+      { zh: 'YouTube 搜 "NeetCode Contains Duplicate", 看视频',
+        en: 'Search YouTube for "NeetCode Contains Duplicate", watch the video' },
+      { zh: '去 <a href="https://leetcode.com/problems/contains-duplicate/" target="_blank">leetcode.com</a> 自己写一遍',
+        en: 'Go to <a href="https://leetcode.com/problems/contains-duplicate/" target="_blank">leetcode.com</a> and code it yourself' },
+      { zh: '用英文对 Claude 语音模式说一遍你怎么解的',
+        en: 'Explain your solution in English to Claude voice mode' },
+    ],
+  };
+
+  const PHASE3_STEPS = [
+    { zh: '挑 3 家中型 robotics/AI 公司 (Skydio / Cobalt / Symbotic / Cruise / Aurora)',
+      en: 'Pick 3 mid-size robotics/AI companies (Skydio / Cobalt / Symbotic / Cruise / Aurora)' },
+    { zh: '每家针对 JD 微调简历关键词',
+      en: 'Tune resume keywords for each JD' },
+    { zh: 'LinkedIn 找一个 employee 发消息求内推',
+      en: 'Find an employee on LinkedIn and DM for a referral' },
+    { zh: '<b>不要碰 dream 公司</b>—— 让盲点在不那么在乎的公司里暴露',
+      en: "<b>Don't touch dream companies</b> — let blind spots expose themselves where stakes are low" },
+  ];
+
+  const PHASE4_STEPS = [
+    { zh: '第一梯队必投: NVIDIA · Apple · Google/Waymo · Meta RL · Qualcomm',
+      en: 'Tier-1 must-apply: NVIDIA · Apple · Google/Waymo · Meta RL · Qualcomm' },
+    { zh: '第二梯队: Figure · 1X · Skild · Physical Intelligence · Apptronik · Boston Dynamics',
+      en: 'Tier-2: Figure · 1X · Skild · Physical Intelligence · Apptronik · Boston Dynamics' },
+    { zh: '查 Tesla Optimus / Wayve sponsor 历史',
+      en: 'Check sponsor history for Tesla Optimus / Wayve' },
+    { zh: '每家先在 myvisajobs.com 确认 H-1B sponsor',
+      en: 'Verify H-1B sponsor on myvisajobs.com for each' },
+  ];
+
+  const SUNDAY_STEPS = [
+    { zh: '本周做了多少 LC 题? 投了多少家?',
+      en: 'How many LC problems this week? How many applications?' },
+    { zh: '哪里卡住? 哪个 pattern 还不熟?',
+      en: 'Where stuck? Which pattern still unfamiliar?' },
+    { zh: '下周三个最重要动作是什么?',
+      en: 'What are the top 3 actions for next week?' },
+    { zh: '下面 "本周固定" 勾完了吗?',
+      en: "Did you complete 'weekly fixed' below?" },
+  ];
+
+  const PRINCIPLES = [
+    { zh_b: '不要等"准备好了"再投。', zh_t: '真面试一次的反馈量 = 10 次 mock。',
+      en_b: "Don't wait until you're 'ready' to apply.", en_t: 'One real interview = 10 mocks of feedback.' },
+    { zh_b: '拒信是数据，不是失败。', zh_t: '每被拒一次问 recruiter 哪里出问题。',
+      en_b: 'Rejection is data, not failure.', en_t: 'Each time, ask the recruiter what went wrong.' },
+    { zh_b: '质量 >> 数量。', zh_t: '一天 5 家精修 + 内推 > 30 家盲投 20 倍。',
+      en_b: 'Quality >> quantity.', en_t: '5 tailored apps + referrals beat 30 blind applications 20×.' },
+    { zh_b: '练手公司的 offer 是筹码。', zh_t: '谈判时跟 dream 公司说"我手上有 X 的 offer"。',
+      en_b: 'Practice-company offers are leverage.', en_t: "Tell dream companies 'I have an offer from X'." },
+    { zh_b: '卡住了就退一步。', zh_t: '这个时间表是参考，不是合同。',
+      en_b: 'Stuck? Step back.', en_t: 'This timeline is a reference, not a contract.' },
+    { zh_b: '90% 时间在做，不在选。', zh_t: '停止研究"哪个 plan 最好"。开始动。',
+      en_b: '90% doing, not choosing.', en_t: "Stop researching 'which plan is best'. Start." },
+  ];
+
+  const QUICK_LINKS = [
+    { url: 'https://neetcode.io/roadmap', name: 'NeetCode Roadmap',
+      desc: { zh: '每日 LC pattern 路径', en: 'Daily LC pattern path' } },
+    { url: 'https://leetcode.com/problemset/', name: 'LeetCode',
+      desc: { zh: '练题主战场', en: 'Main grinding ground' } },
+    { url: 'https://www.pramp.com/', name: 'Pramp',
+      desc: { zh: '免费 mock', en: 'Free mocks' } },
+    { url: 'https://interviewing.io/', name: 'interviewing.io',
+      desc: { zh: '付费 mock · Phase 4+', en: 'Paid mocks · Phase 4+' } },
+    { url: 'https://www.levels.fyi/', name: 'levels.fyi',
+      desc: { zh: '薪资数据', en: 'Salary data' } },
+    { url: 'https://github.com/donnemartin/system-design-primer', name: 'System Design Primer',
+      desc: { zh: 'Phase 3 起读', en: 'Read from Phase 3' } },
+    { url: 'https://www.myvisajobs.com/', name: 'myvisajobs.com',
+      desc: { zh: 'H-1B sponsor 历史', en: 'H-1B sponsor history' } },
+    { url: 'https://www.kalzumeus.com/2012/01/23/salary-negotiation/', name: 'Patrick McKenzie',
+      desc: { zh: '谈判圣经 · 读 3 遍', en: 'Negotiation bible · read 3×' } },
+  ];
+
+  // ========== NEETCODE 150 ROADMAP ==========
+  // p=pattern, s=slug (works for both LC and NC URLs), n=name, d=difficulty
+  const PATTERN_ORDER = [
+    'Arrays & Hashing', 'Two Pointers', 'Sliding Window', 'Stack', 'Binary Search',
+    'Linked List', 'Trees', 'Tries', 'Heap / Priority Queue', 'Backtracking',
+    'Graphs', 'Advanced Graphs', '1-D Dynamic Programming', '2-D Dynamic Programming',
+    'Greedy', 'Intervals', 'Math & Geometry', 'Bit Manipulation'
+  ];
+
+  const PHASE_PATTERNS = {
+    1: ['Arrays & Hashing', 'Two Pointers', 'Sliding Window'],
+    2: ['Stack', 'Binary Search', 'Linked List', 'Trees'],
+    3: ['Tries', 'Heap / Priority Queue', 'Backtracking', 'Graphs', 'Advanced Graphs', '1-D Dynamic Programming'],
+    4: ['2-D Dynamic Programming', 'Greedy', 'Intervals', 'Math & Geometry', 'Bit Manipulation'],
+    5: [], // review/interview phase — recommendations fall back to any unsolved
+  };
+
+  const ROADMAP = [
+    // Arrays & Hashing (9)
+    { p: 'Arrays & Hashing', s: 'contains-duplicate', n: 'Contains Duplicate', d: 'Easy' },
+    { p: 'Arrays & Hashing', s: 'valid-anagram', n: 'Valid Anagram', d: 'Easy' },
+    { p: 'Arrays & Hashing', s: 'two-sum', n: 'Two Sum', d: 'Easy' },
+    { p: 'Arrays & Hashing', s: 'group-anagrams', n: 'Group Anagrams', d: 'Medium' },
+    { p: 'Arrays & Hashing', s: 'top-k-frequent-elements', n: 'Top K Frequent Elements', d: 'Medium' },
+    { p: 'Arrays & Hashing', s: 'encode-and-decode-strings', n: 'Encode and Decode Strings', d: 'Medium' },
+    { p: 'Arrays & Hashing', s: 'product-of-array-except-self', n: 'Product of Array Except Self', d: 'Medium' },
+    { p: 'Arrays & Hashing', s: 'valid-sudoku', n: 'Valid Sudoku', d: 'Medium' },
+    { p: 'Arrays & Hashing', s: 'longest-consecutive-sequence', n: 'Longest Consecutive Sequence', d: 'Medium' },
+    // Two Pointers (5)
+    { p: 'Two Pointers', s: 'valid-palindrome', n: 'Valid Palindrome', d: 'Easy' },
+    { p: 'Two Pointers', s: 'two-sum-ii-input-array-is-sorted', n: 'Two Sum II', d: 'Medium' },
+    { p: 'Two Pointers', s: '3sum', n: '3Sum', d: 'Medium' },
+    { p: 'Two Pointers', s: 'container-with-most-water', n: 'Container With Most Water', d: 'Medium' },
+    { p: 'Two Pointers', s: 'trapping-rain-water', n: 'Trapping Rain Water', d: 'Hard' },
+    // Sliding Window (6)
+    { p: 'Sliding Window', s: 'best-time-to-buy-and-sell-stock', n: 'Best Time to Buy and Sell Stock', d: 'Easy' },
+    { p: 'Sliding Window', s: 'longest-substring-without-repeating-characters', n: 'Longest Substring Without Repeating', d: 'Medium' },
+    { p: 'Sliding Window', s: 'longest-repeating-character-replacement', n: 'Longest Repeating Character Replacement', d: 'Medium' },
+    { p: 'Sliding Window', s: 'permutation-in-string', n: 'Permutation in String', d: 'Medium' },
+    { p: 'Sliding Window', s: 'minimum-window-substring', n: 'Minimum Window Substring', d: 'Hard' },
+    { p: 'Sliding Window', s: 'sliding-window-maximum', n: 'Sliding Window Maximum', d: 'Hard' },
+    // Stack (6)
+    { p: 'Stack', s: 'valid-parentheses', n: 'Valid Parentheses', d: 'Easy' },
+    { p: 'Stack', s: 'min-stack', n: 'Min Stack', d: 'Medium' },
+    { p: 'Stack', s: 'evaluate-reverse-polish-notation', n: 'Evaluate Reverse Polish Notation', d: 'Medium' },
+    { p: 'Stack', s: 'generate-parentheses', n: 'Generate Parentheses', d: 'Medium' },
+    { p: 'Stack', s: 'daily-temperatures', n: 'Daily Temperatures', d: 'Medium' },
+    { p: 'Stack', s: 'car-fleet', n: 'Car Fleet', d: 'Medium' },
+    // Binary Search (7)
+    { p: 'Binary Search', s: 'binary-search', n: 'Binary Search', d: 'Easy' },
+    { p: 'Binary Search', s: 'search-a-2d-matrix', n: 'Search a 2D Matrix', d: 'Medium' },
+    { p: 'Binary Search', s: 'koko-eating-bananas', n: 'Koko Eating Bananas', d: 'Medium' },
+    { p: 'Binary Search', s: 'find-minimum-in-rotated-sorted-array', n: 'Find Min in Rotated Sorted Array', d: 'Medium' },
+    { p: 'Binary Search', s: 'search-in-rotated-sorted-array', n: 'Search in Rotated Sorted Array', d: 'Medium' },
+    { p: 'Binary Search', s: 'time-based-key-value-store', n: 'Time Based Key-Value Store', d: 'Medium' },
+    { p: 'Binary Search', s: 'median-of-two-sorted-arrays', n: 'Median of Two Sorted Arrays', d: 'Hard' },
+    // Linked List (11)
+    { p: 'Linked List', s: 'reverse-linked-list', n: 'Reverse Linked List', d: 'Easy' },
+    { p: 'Linked List', s: 'merge-two-sorted-lists', n: 'Merge Two Sorted Lists', d: 'Easy' },
+    { p: 'Linked List', s: 'reorder-list', n: 'Reorder List', d: 'Medium' },
+    { p: 'Linked List', s: 'remove-nth-node-from-end-of-list', n: 'Remove Nth Node From End', d: 'Medium' },
+    { p: 'Linked List', s: 'copy-list-with-random-pointer', n: 'Copy List With Random Pointer', d: 'Medium' },
+    { p: 'Linked List', s: 'add-two-numbers', n: 'Add Two Numbers', d: 'Medium' },
+    { p: 'Linked List', s: 'linked-list-cycle', n: 'Linked List Cycle', d: 'Easy' },
+    { p: 'Linked List', s: 'find-the-duplicate-number', n: 'Find the Duplicate Number', d: 'Medium' },
+    { p: 'Linked List', s: 'lru-cache', n: 'LRU Cache', d: 'Medium' },
+    { p: 'Linked List', s: 'merge-k-sorted-lists', n: 'Merge K Sorted Lists', d: 'Hard' },
+    { p: 'Linked List', s: 'reverse-nodes-in-k-group', n: 'Reverse Nodes in K-Group', d: 'Hard' },
+    // Trees (15)
+    { p: 'Trees', s: 'invert-binary-tree', n: 'Invert Binary Tree', d: 'Easy' },
+    { p: 'Trees', s: 'maximum-depth-of-binary-tree', n: 'Maximum Depth of Binary Tree', d: 'Easy' },
+    { p: 'Trees', s: 'diameter-of-binary-tree', n: 'Diameter of Binary Tree', d: 'Easy' },
+    { p: 'Trees', s: 'balanced-binary-tree', n: 'Balanced Binary Tree', d: 'Easy' },
+    { p: 'Trees', s: 'same-tree', n: 'Same Tree', d: 'Easy' },
+    { p: 'Trees', s: 'subtree-of-another-tree', n: 'Subtree of Another Tree', d: 'Easy' },
+    { p: 'Trees', s: 'lowest-common-ancestor-of-a-binary-search-tree', n: 'LCA of a BST', d: 'Medium' },
+    { p: 'Trees', s: 'binary-tree-level-order-traversal', n: 'Binary Tree Level Order Traversal', d: 'Medium' },
+    { p: 'Trees', s: 'binary-tree-right-side-view', n: 'Binary Tree Right Side View', d: 'Medium' },
+    { p: 'Trees', s: 'count-good-nodes-in-binary-tree', n: 'Count Good Nodes in Binary Tree', d: 'Medium' },
+    { p: 'Trees', s: 'validate-binary-search-tree', n: 'Validate Binary Search Tree', d: 'Medium' },
+    { p: 'Trees', s: 'kth-smallest-element-in-a-bst', n: 'Kth Smallest Element in BST', d: 'Medium' },
+    { p: 'Trees', s: 'construct-binary-tree-from-preorder-and-inorder-traversal', n: 'Construct Tree from Preorder & Inorder', d: 'Medium' },
+    { p: 'Trees', s: 'binary-tree-maximum-path-sum', n: 'Binary Tree Maximum Path Sum', d: 'Hard' },
+    { p: 'Trees', s: 'serialize-and-deserialize-binary-tree', n: 'Serialize/Deserialize Binary Tree', d: 'Hard' },
+    // Tries (3)
+    { p: 'Tries', s: 'implement-trie-prefix-tree', n: 'Implement Trie', d: 'Medium' },
+    { p: 'Tries', s: 'design-add-and-search-words-data-structure', n: 'Design Add/Search Words DS', d: 'Medium' },
+    { p: 'Tries', s: 'word-search-ii', n: 'Word Search II', d: 'Hard' },
+    // Heap / Priority Queue (7)
+    { p: 'Heap / Priority Queue', s: 'kth-largest-element-in-a-stream', n: 'Kth Largest Element in Stream', d: 'Easy' },
+    { p: 'Heap / Priority Queue', s: 'last-stone-weight', n: 'Last Stone Weight', d: 'Easy' },
+    { p: 'Heap / Priority Queue', s: 'k-closest-points-to-origin', n: 'K Closest Points to Origin', d: 'Medium' },
+    { p: 'Heap / Priority Queue', s: 'kth-largest-element-in-an-array', n: 'Kth Largest Element in Array', d: 'Medium' },
+    { p: 'Heap / Priority Queue', s: 'task-scheduler', n: 'Task Scheduler', d: 'Medium' },
+    { p: 'Heap / Priority Queue', s: 'design-twitter', n: 'Design Twitter', d: 'Medium' },
+    { p: 'Heap / Priority Queue', s: 'find-median-from-data-stream', n: 'Find Median from Data Stream', d: 'Hard' },
+    // Backtracking (10)
+    { p: 'Backtracking', s: 'subsets', n: 'Subsets', d: 'Medium' },
+    { p: 'Backtracking', s: 'combination-sum', n: 'Combination Sum', d: 'Medium' },
+    { p: 'Backtracking', s: 'combination-sum-ii', n: 'Combination Sum II', d: 'Medium' },
+    { p: 'Backtracking', s: 'permutations', n: 'Permutations', d: 'Medium' },
+    { p: 'Backtracking', s: 'subsets-ii', n: 'Subsets II', d: 'Medium' },
+    { p: 'Backtracking', s: 'word-search', n: 'Word Search', d: 'Medium' },
+    { p: 'Backtracking', s: 'palindrome-partitioning', n: 'Palindrome Partitioning', d: 'Medium' },
+    { p: 'Backtracking', s: 'letter-combinations-of-a-phone-number', n: 'Letter Combinations of Phone Number', d: 'Medium' },
+    { p: 'Backtracking', s: 'n-queens', n: 'N-Queens', d: 'Hard' },
+    { p: 'Backtracking', s: 'restore-ip-addresses', n: 'Restore IP Addresses', d: 'Medium' },
+    // Graphs (13)
+    { p: 'Graphs', s: 'number-of-islands', n: 'Number of Islands', d: 'Medium' },
+    { p: 'Graphs', s: 'max-area-of-island', n: 'Max Area of Island', d: 'Medium' },
+    { p: 'Graphs', s: 'clone-graph', n: 'Clone Graph', d: 'Medium' },
+    { p: 'Graphs', s: 'walls-and-gates', n: 'Walls and Gates', d: 'Medium' },
+    { p: 'Graphs', s: 'rotting-oranges', n: 'Rotting Oranges', d: 'Medium' },
+    { p: 'Graphs', s: 'pacific-atlantic-water-flow', n: 'Pacific Atlantic Water Flow', d: 'Medium' },
+    { p: 'Graphs', s: 'surrounded-regions', n: 'Surrounded Regions', d: 'Medium' },
+    { p: 'Graphs', s: 'course-schedule', n: 'Course Schedule', d: 'Medium' },
+    { p: 'Graphs', s: 'course-schedule-ii', n: 'Course Schedule II', d: 'Medium' },
+    { p: 'Graphs', s: 'graph-valid-tree', n: 'Graph Valid Tree', d: 'Medium' },
+    { p: 'Graphs', s: 'number-of-connected-components-in-an-undirected-graph', n: 'Connected Components', d: 'Medium' },
+    { p: 'Graphs', s: 'redundant-connection', n: 'Redundant Connection', d: 'Medium' },
+    { p: 'Graphs', s: 'word-ladder', n: 'Word Ladder', d: 'Hard' },
+    // Advanced Graphs (6)
+    { p: 'Advanced Graphs', s: 'reconstruct-itinerary', n: 'Reconstruct Itinerary', d: 'Hard' },
+    { p: 'Advanced Graphs', s: 'min-cost-to-connect-all-points', n: 'Min Cost to Connect All Points', d: 'Medium' },
+    { p: 'Advanced Graphs', s: 'network-delay-time', n: 'Network Delay Time', d: 'Medium' },
+    { p: 'Advanced Graphs', s: 'swim-in-rising-water', n: 'Swim in Rising Water', d: 'Hard' },
+    { p: 'Advanced Graphs', s: 'alien-dictionary', n: 'Alien Dictionary', d: 'Hard' },
+    { p: 'Advanced Graphs', s: 'cheapest-flights-within-k-stops', n: 'Cheapest Flights Within K Stops', d: 'Medium' },
+    // 1-D Dynamic Programming (12)
+    { p: '1-D Dynamic Programming', s: 'climbing-stairs', n: 'Climbing Stairs', d: 'Easy' },
+    { p: '1-D Dynamic Programming', s: 'min-cost-climbing-stairs', n: 'Min Cost Climbing Stairs', d: 'Easy' },
+    { p: '1-D Dynamic Programming', s: 'house-robber', n: 'House Robber', d: 'Medium' },
+    { p: '1-D Dynamic Programming', s: 'house-robber-ii', n: 'House Robber II', d: 'Medium' },
+    { p: '1-D Dynamic Programming', s: 'longest-palindromic-substring', n: 'Longest Palindromic Substring', d: 'Medium' },
+    { p: '1-D Dynamic Programming', s: 'palindromic-substrings', n: 'Palindromic Substrings', d: 'Medium' },
+    { p: '1-D Dynamic Programming', s: 'decode-ways', n: 'Decode Ways', d: 'Medium' },
+    { p: '1-D Dynamic Programming', s: 'coin-change', n: 'Coin Change', d: 'Medium' },
+    { p: '1-D Dynamic Programming', s: 'maximum-product-subarray', n: 'Maximum Product Subarray', d: 'Medium' },
+    { p: '1-D Dynamic Programming', s: 'word-break', n: 'Word Break', d: 'Medium' },
+    { p: '1-D Dynamic Programming', s: 'longest-increasing-subsequence', n: 'Longest Increasing Subsequence', d: 'Medium' },
+    { p: '1-D Dynamic Programming', s: 'partition-equal-subset-sum', n: 'Partition Equal Subset Sum', d: 'Medium' },
+    // 2-D Dynamic Programming (11)
+    { p: '2-D Dynamic Programming', s: 'unique-paths', n: 'Unique Paths', d: 'Medium' },
+    { p: '2-D Dynamic Programming', s: 'longest-common-subsequence', n: 'Longest Common Subsequence', d: 'Medium' },
+    { p: '2-D Dynamic Programming', s: 'best-time-to-buy-and-sell-stock-with-cooldown', n: 'Buy/Sell Stock With Cooldown', d: 'Medium' },
+    { p: '2-D Dynamic Programming', s: 'coin-change-ii', n: 'Coin Change II', d: 'Medium' },
+    { p: '2-D Dynamic Programming', s: 'target-sum', n: 'Target Sum', d: 'Medium' },
+    { p: '2-D Dynamic Programming', s: 'interleaving-string', n: 'Interleaving String', d: 'Medium' },
+    { p: '2-D Dynamic Programming', s: 'longest-increasing-path-in-a-matrix', n: 'Longest Increasing Path in Matrix', d: 'Hard' },
+    { p: '2-D Dynamic Programming', s: 'distinct-subsequences', n: 'Distinct Subsequences', d: 'Hard' },
+    { p: '2-D Dynamic Programming', s: 'edit-distance', n: 'Edit Distance', d: 'Medium' },
+    { p: '2-D Dynamic Programming', s: 'burst-balloons', n: 'Burst Balloons', d: 'Hard' },
+    { p: '2-D Dynamic Programming', s: 'regular-expression-matching', n: 'Regular Expression Matching', d: 'Hard' },
+    // Greedy (8)
+    { p: 'Greedy', s: 'maximum-subarray', n: 'Maximum Subarray', d: 'Medium' },
+    { p: 'Greedy', s: 'jump-game', n: 'Jump Game', d: 'Medium' },
+    { p: 'Greedy', s: 'jump-game-ii', n: 'Jump Game II', d: 'Medium' },
+    { p: 'Greedy', s: 'gas-station', n: 'Gas Station', d: 'Medium' },
+    { p: 'Greedy', s: 'hand-of-straights', n: 'Hand of Straights', d: 'Medium' },
+    { p: 'Greedy', s: 'merge-triplets-to-form-target-triplet', n: 'Merge Triplets to Form Target', d: 'Medium' },
+    { p: 'Greedy', s: 'partition-labels', n: 'Partition Labels', d: 'Medium' },
+    { p: 'Greedy', s: 'valid-parenthesis-string', n: 'Valid Parenthesis String', d: 'Medium' },
+    // Intervals (6)
+    { p: 'Intervals', s: 'insert-interval', n: 'Insert Interval', d: 'Medium' },
+    { p: 'Intervals', s: 'merge-intervals', n: 'Merge Intervals', d: 'Medium' },
+    { p: 'Intervals', s: 'non-overlapping-intervals', n: 'Non-Overlapping Intervals', d: 'Medium' },
+    { p: 'Intervals', s: 'meeting-rooms', n: 'Meeting Rooms', d: 'Easy' },
+    { p: 'Intervals', s: 'meeting-rooms-ii', n: 'Meeting Rooms II', d: 'Medium' },
+    { p: 'Intervals', s: 'minimum-interval-to-include-each-query', n: 'Min Interval to Include Each Query', d: 'Hard' },
+    // Math & Geometry (8)
+    { p: 'Math & Geometry', s: 'rotate-image', n: 'Rotate Image', d: 'Medium' },
+    { p: 'Math & Geometry', s: 'spiral-matrix', n: 'Spiral Matrix', d: 'Medium' },
+    { p: 'Math & Geometry', s: 'set-matrix-zeroes', n: 'Set Matrix Zeroes', d: 'Medium' },
+    { p: 'Math & Geometry', s: 'happy-number', n: 'Happy Number', d: 'Easy' },
+    { p: 'Math & Geometry', s: 'plus-one', n: 'Plus One', d: 'Easy' },
+    { p: 'Math & Geometry', s: 'powx-n', n: 'Pow(x, n)', d: 'Medium' },
+    { p: 'Math & Geometry', s: 'multiply-strings', n: 'Multiply Strings', d: 'Medium' },
+    { p: 'Math & Geometry', s: 'detect-squares', n: 'Detect Squares', d: 'Medium' },
+    // Bit Manipulation (7)
+    { p: 'Bit Manipulation', s: 'single-number', n: 'Single Number', d: 'Easy' },
+    { p: 'Bit Manipulation', s: 'number-of-1-bits', n: 'Number of 1 Bits', d: 'Easy' },
+    { p: 'Bit Manipulation', s: 'counting-bits', n: 'Counting Bits', d: 'Easy' },
+    { p: 'Bit Manipulation', s: 'reverse-bits', n: 'Reverse Bits', d: 'Easy' },
+    { p: 'Bit Manipulation', s: 'missing-number', n: 'Missing Number', d: 'Easy' },
+    { p: 'Bit Manipulation', s: 'sum-of-two-integers', n: 'Sum of Two Integers', d: 'Medium' },
+    { p: 'Bit Manipulation', s: 'reverse-integer', n: 'Reverse Integer', d: 'Medium' },
+  ];
+
+  function lcUrl(slug) { return `https://leetcode.com/problems/${slug}/`; }
+  function ncUrl(slug) { return `https://neetcode.io/solutions/${slug}`; }
+  function problemsByPattern(pat) { return ROADMAP.filter(p => p.p === pat); }
+
+  // ========== DATE UTILS ==========
+  function today() {
+    const d = new Date();
+    return d.toISOString().slice(0, 10);
+  }
+  function parseDate(s) { return new Date(s + 'T00:00:00'); }
+  function daysBetween(a, b) {
+    return Math.round((parseDate(b) - parseDate(a)) / 86400000);
+  }
+  function fmtDate(s) {
+    const d = parseDate(s);
+    const m = d.getMonth() + 1, day = d.getDate();
+    return `${m}/${day}`;
+  }
+  function fmtFullDate(s) {
+    const d = parseDate(s);
+    const days = ['周日','周一','周二','周三','周四','周五','周六'];
+    return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} · ${days[d.getDay()]}`;
+  }
+  function getCurrentPhase(date) {
+    for (const p of PHASES) {
+      if (date >= p.start && date <= p.end) return p;
+    }
+    if (date < PHASES[0].start) return { ...PHASES[0], beforeStart: true };
+    return { ...PHASES[PHASES.length - 1], afterEnd: true };
+  }
+  function getISOWeek(dateStr) {
+    const diff = daysBetween(state.startDate, dateStr);
+    return Math.floor(diff / 7);
+  }
+  function getMondayOfWeek(dateStr) {
+    const d = parseDate(dateStr);
+    const day = d.getDay(); // 0=Sun, 1=Mon
+    const offset = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + offset);
+    return d.toISOString().slice(0, 10);
+  }
+
+  // ========== STORAGE (Claude window.storage OR browser localStorage) ==========
+  const STORAGE_BACKEND =
+    (typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function')
+      ? 'claude' : 'local';
+  const LS_PREFIX = 'battlelog:';
+
+  async function storeGet(key) {
+    try {
+      if (STORAGE_BACKEND === 'claude') {
+        const r = await window.storage.get(key);
+        return r ? JSON.parse(r.value) : null;
+      } else {
+        const v = localStorage.getItem(LS_PREFIX + key);
+        return v ? JSON.parse(v) : null;
+      }
+    } catch (e) { return null; }
+  }
+  async function storeSet(key, val) {
+    try {
+      if (STORAGE_BACKEND === 'claude') {
+        await window.storage.set(key, JSON.stringify(val));
+      } else {
+        localStorage.setItem(LS_PREFIX + key, JSON.stringify(val));
+      }
+    } catch (e) { console.error('storage', e); }
+  }
+  async function storeDelete(key) {
+    try {
+      if (STORAGE_BACKEND === 'claude') {
+        await window.storage.delete(key);
+      } else {
+        localStorage.removeItem(LS_PREFIX + key);
+      }
+    } catch (e) { console.error('storage', e); }
+  }
+  async function storeListKeys() {
+    try {
+      if (STORAGE_BACKEND === 'claude') {
+        const r = await window.storage.list();
+        return (r && r.keys) ? r.keys : [];
+      } else {
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith(LS_PREFIX)) keys.push(k.slice(LS_PREFIX.length));
+        }
+        return keys;
+      }
+    } catch (e) { return []; }
+  }
+
+  // ========== STATE ==========
+  let state = {
+    today: today(),
+    lang: 'zh',
+    startDate: DEFAULT_START,
+    phase: null,
+    autoPhase: null,
+    manualPhase: null, // phase id (1-5) when user has manually overridden
+    dailyChecks: {},   // {taskId: true}
+    weeklyChecks: {},  // {taskId: true}
+    counters: {},      // {key: number}
+    notes: '',
+    roadmapSolved: {}, // {slug: true}
+    expandedPatterns: {}, // {patternName: true}
+    filter: 'all',     // 'all' | 'unsolved' | 'Easy' | 'Medium' | 'Hard'
+  };
+
+  async function loadState() {
+    state.today = today();
+
+    // Load language preference (or detect from browser on first run)
+    const savedLang = await storeGet('lang');
+    if (savedLang === 'zh' || savedLang === 'en') {
+      state.lang = savedLang;
+    } else {
+      // First-time detection: if browser is non-Chinese, default to English
+      const navLang = (navigator.language || 'zh').toLowerCase();
+      state.lang = navLang.startsWith('zh') ? 'zh' : 'en';
+    }
+
+    // Load start date — affects everything else
+    const savedStart = await storeGet('startDate');
+    state.startDate = savedStart || DEFAULT_START;
+    PHASES = buildPhases(state.startDate);
+
+    state.autoPhase = getCurrentPhase(state.today);
+
+    const manual = await storeGet('manualPhase');
+    state.manualPhase = (manual && Number.isInteger(manual)) ? manual : null;
+
+    if (state.manualPhase) {
+      const found = PHASES.find(p => p.id === state.manualPhase);
+      state.phase = found || state.autoPhase;
+    } else {
+      state.phase = state.autoPhase;
+    }
+
+    const daily = await storeGet(`daily:${state.today}`);
+    state.dailyChecks = daily || {};
+
+    const weekKey = getMondayOfWeek(state.today);
+    const weekly = await storeGet(`weekly:${weekKey}`);
+    state.weeklyChecks = weekly || {};
+
+    const totals = await storeGet('totals');
+    state.counters = totals || {};
+
+    const notes = await storeGet(`notes:${state.today}`);
+    state.notes = notes || '';
+
+    const solved = await storeGet('roadmap-solved');
+    state.roadmapSolved = solved || {};
+
+    const expanded = await storeGet('roadmap-expanded');
+    if (expanded) {
+      state.expandedPatterns = expanded;
+    } else {
+      // Default: expand the current phase's patterns
+      state.expandedPatterns = {};
+      const phaseId = state.phase.id;
+      const pats = PHASE_PATTERNS[phaseId] || [];
+      pats.forEach(p => { state.expandedPatterns[p] = true; });
+    }
+  }
+
+  async function saveManualPhase() {
+    if (state.manualPhase === null) {
+      try { await window.storage.delete('manualPhase'); } catch (e) {}
+    } else {
+      await storeSet('manualPhase', state.manualPhase);
+    }
+  }
+
+  async function setPhase(id) {
+    // If clicking the auto-detected phase, clear manual override
+    if (state.autoPhase && state.autoPhase.id === id && !state.autoPhase.beforeStart && !state.autoPhase.afterEnd) {
+      state.manualPhase = null;
+    } else {
+      state.manualPhase = id;
+    }
+    await saveManualPhase();
+    const found = PHASES.find(p => p.id === (state.manualPhase || state.autoPhase.id));
+    state.phase = found || state.autoPhase;
+    render();
+  }
+
+  async function resetToAuto() {
+    state.manualPhase = null;
+    await saveManualPhase();
+    state.phase = state.autoPhase;
+    render();
+  }
+
+  async function saveDaily() { await storeSet(`daily:${state.today}`, state.dailyChecks); }
+  async function saveWeekly() {
+    const weekKey = getMondayOfWeek(state.today);
+    await storeSet(`weekly:${weekKey}`, state.weeklyChecks);
+  }
+  async function saveCounters() { await storeSet('totals', state.counters); }
+  async function saveNotes() { await storeSet(`notes:${state.today}`, state.notes); }
+  async function saveRoadmap() { await storeSet('roadmap-solved', state.roadmapSolved); }
+  async function saveExpanded() { await storeSet('roadmap-expanded', state.expandedPatterns); }
+  async function saveStartDate() { await storeSet('startDate', state.startDate); }
+  async function saveLang() { await storeSet('lang', state.lang); }
+
+  async function toggleLang() {
+    state.lang = (state.lang === 'zh') ? 'en' : 'zh';
+    await saveLang();
+    render();
+  }
+
+  async function updateStartDate(newDate) {
+    if (!newDate || !/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
+      alert('日期格式不对'); return;
+    }
+    state.startDate = newDate;
+    PHASES = buildPhases(state.startDate);
+    await saveStartDate();
+    // Recompute auto phase and current phase
+    state.autoPhase = getCurrentPhase(state.today);
+    if (state.manualPhase) {
+      const found = PHASES.find(p => p.id === state.manualPhase);
+      state.phase = found || state.autoPhase;
+    } else {
+      state.phase = state.autoPhase;
+    }
+    render();
+  }
+
+  // Recommendation logic: find next N unsolved problems in current phase's patterns,
+  // falling back to subsequent phases / all patterns if current phase is done.
+  function getRecommendations(n) {
+    const phaseId = state.phase.id;
+    const seenPats = new Set();
+    const candidates = [];
+
+    // Build pattern priority list: current phase first, then later phases, then earlier phases (for review)
+    const priority = [];
+    // 1. Current phase patterns
+    (PHASE_PATTERNS[phaseId] || []).forEach(p => { if (!seenPats.has(p)) { priority.push(p); seenPats.add(p); } });
+    // 2. Later phases
+    for (let i = phaseId + 1; i <= 5; i++) {
+      (PHASE_PATTERNS[i] || []).forEach(p => { if (!seenPats.has(p)) { priority.push(p); seenPats.add(p); } });
+    }
+    // 3. Earlier phases (review)
+    for (let i = phaseId - 1; i >= 1; i--) {
+      (PHASE_PATTERNS[i] || []).forEach(p => { if (!seenPats.has(p)) { priority.push(p); seenPats.add(p); } });
+    }
+    // 4. Any leftover pattern from the full order
+    PATTERN_ORDER.forEach(p => { if (!seenPats.has(p)) { priority.push(p); seenPats.add(p); } });
+
+    for (const pat of priority) {
+      const probs = problemsByPattern(pat);
+      for (const pr of probs) {
+        if (!state.roadmapSolved[pr.s]) {
+          candidates.push(pr);
+          if (candidates.length >= n) return candidates;
+        }
+      }
+    }
+    return candidates;
+  }
+
+  // ========== RENDER ==========
+  function render() {
+    applyStaticLabels();
+    renderHeader();
+    renderPhaseStrip();
+    renderToday();
+    renderRecommendations();
+    renderDaily();
+    renderWeekly();
+    renderCounters();
+    renderMilestones();
+    renderCheckpoint();
+    renderNotes();
+    renderRoadmap();
+  }
+
+  function renderHeader() {
+    document.getElementById('header-date').textContent = fmtFullDate(state.today);
+    const phase = state.phase;
+    if (phase.beforeStart) {
+      const days = daysBetween(state.today, phase.start);
+      document.getElementById('header-day').textContent = t('before_start_n', days);
+    } else if (phase.afterEnd) {
+      document.getElementById('header-day').textContent = t('plan_complete');
+    } else {
+      const dayInPhase = daysBetween(phase.start, state.today) + 1;
+      const dayInPlan = daysBetween(state.startDate, state.today) + 1;
+      document.getElementById('header-day').textContent = t('day_of_70', dayInPlan, phase.name, dayInPhase);
+    }
+  }
+
+  function renderPhaseStrip() {
+    const wrap = document.getElementById('phase-strip');
+    wrap.innerHTML = '';
+    for (const p of PHASES) {
+      const cell = document.createElement('div');
+      cell.className = 'phase-cell';
+      // "past" styling based on auto/date, not manual selection
+      if (state.today > p.end) cell.classList.add('past');
+      // "active" is the currently-shown phase (could be manual)
+      if (state.phase.id === p.id) cell.classList.add('active');
+      // "manual" marker if this is a manual override
+      if (state.manualPhase === p.id && (!state.autoPhase || state.autoPhase.id !== p.id || state.autoPhase.beforeStart || state.autoPhase.afterEnd)) {
+        cell.classList.add('manual');
+      }
+      cell.innerHTML = `
+        <span class="num">${p.id}</span>
+        ${loc(p.cn)}
+        <span class="dates">${fmtDate(p.start)}–${fmtDate(p.end)}</span>
+      `;
+      cell.addEventListener('click', () => setPhase(p.id));
+      wrap.appendChild(cell);
+    }
+    // Mode bar
+    const modeLabel = document.getElementById('phase-mode-label');
+    const autoBtn = document.getElementById('phase-auto-btn');
+    autoBtn.textContent = t('back_to_auto');
+    if (state.manualPhase) {
+      const autoName = state.autoPhase.beforeStart ? t('auto_before_start') :
+                       state.autoPhase.afterEnd ? t('auto_after_end') : state.autoPhase.name;
+      modeLabel.innerHTML = t('phase_mode_manual_prefix') +
+                            '<span style="color:var(--warn)">' + t('phase_mode_manual_locked') + '</span>' +
+                            t('phase_mode_manual_suffix') + autoName;
+      autoBtn.classList.remove('hidden');
+    } else {
+      modeLabel.textContent = t('phase_mode_auto');
+      autoBtn.classList.add('hidden');
+    }
+  }
+
+  function renderToday() {
+    const phase = state.phase;
+    const titleEl = document.getElementById('today-title');
+    const focusEl = document.getElementById('today-focus');
+    const actionWrap = document.getElementById('today-action-wrap');
+
+    let pill = '';
+    if (phase.apply) pill = `<span class="status-pill apply">${t('apply_yes')}</span>`;
+    else pill = `<span class="status-pill no-apply">${t('apply_no')}</span>`;
+
+    const focusText = loc(phase.focus);
+    titleEl.innerHTML = `<span class="em">${loc(phase.cn)}</span> · ${focusText.split(' — ')[0]}${pill}`;
+    focusEl.textContent = focusText;
+
+    // Day 1 special action
+    actionWrap.innerHTML = '';
+    const day1 = PHASES[0].start;
+    const phase3Start = PHASES[2].start;
+    const phase3Day2 = addDays(phase3Start, 1);
+    const phase4Start = PHASES[3].start;
+    const phase4Day2 = addDays(phase4Start, 1);
+
+    if (state.today === day1) {
+      actionWrap.innerHTML = `
+        <div class="today-action">
+          <div class="label">${t('day1_action_label')}</div>
+          <ol>${DAY1_ACTION.steps.map(s => `<li>${loc(s)}</li>`).join('')}</ol>
+        </div>
+      `;
+    } else if (state.today === phase3Start || state.today === phase3Day2) {
+      actionWrap.innerHTML = `
+        <div class="today-action">
+          <div class="label">${t('p3_label')}</div>
+          <ol>${PHASE3_STEPS.map(s => `<li>${loc(s)}</li>`).join('')}</ol>
+        </div>
+      `;
+    } else if (state.today === phase4Start || state.today === phase4Day2) {
+      actionWrap.innerHTML = `
+        <div class="today-action">
+          <div class="label">${t('p4_label')}</div>
+          <ol>${PHASE4_STEPS.map(s => `<li>${loc(s)}</li>`).join('')}</ol>
+        </div>
+      `;
+    } else if (new Date(state.today).getDay() === 0) {
+      // Sunday — weekly review reminder
+      actionWrap.innerHTML = `
+        <div class="today-action">
+          <div class="label">${t('sun_label')}</div>
+          <ol>${SUNDAY_STEPS.map(s => `<li>${loc(s)}</li>`).join('')}</ol>
+        </div>
+      `;
+    }
+  }
+
+  function renderRecommendations() {
+    const wrap = document.getElementById('today-recos-wrap');
+    if (!wrap) return;
+    const recos = getRecommendations(2);
+    if (recos.length === 0) {
+      wrap.innerHTML = `
+        <div class="today-recos">
+          <div class="reco-label">${t('reco_title')}</div>
+          <div class="reco-empty">${t('reco_empty')}</div>
+        </div>`;
+      return;
+    }
+    const items = recos.map((p, i) => `
+      <div class="reco-prob">
+        <span class="reco-num">${i + 1}</span>
+        <span class="reco-name">${p.n}</span>
+        <span class="reco-pat">${p.p}</span>
+        <span class="diff ${p.d}">${p.d}</span>
+        <a href="${lcUrl(p.s)}" target="_blank">LC</a>
+        <a href="${ncUrl(p.s)}" target="_blank">NC</a>
+      </div>
+    `).join('');
+    wrap.innerHTML = `
+      <div class="today-recos">
+        <div class="reco-label">${t('reco_title')}</div>
+        ${items}
+      </div>`;
+  }
+
+  // Roadmap diagram layout: tier-based positioning
+  // Each tier is a horizontal row of pattern nodes with edges between dependencies
+  const DGR_LAYOUT = {
+    width: 1000, height: 540, nodeW: 132, nodeH: 44,
+    // Each pattern: [x_center, y_center, display_label]
+    nodes: {
+      'Arrays & Hashing':         [500,  30, 'Arrays & Hashing'],
+      'Two Pointers':             [320, 110, 'Two Pointers'],
+      'Stack':                    [680, 110, 'Stack'],
+      'Sliding Window':           [160, 190, 'Sliding Window'],
+      'Binary Search':            [320, 190, 'Binary Search'],
+      'Linked List':              [500, 190, 'Linked List'],
+      'Trees':                    [500, 270, 'Trees'],
+      'Tries':                    [80,  350, 'Tries'],
+      'Heap / Priority Queue':    [240, 350, 'Heap / PQ'],
+      'Backtracking':             [400, 350, 'Backtracking'],
+      'Graphs':                   [580, 350, 'Graphs'],
+      '1-D Dynamic Programming':  [760, 350, '1-D DP'],
+      'Advanced Graphs':          [580, 430, 'Adv Graphs'],
+      '2-D Dynamic Programming':  [760, 430, '2-D DP'],
+      'Greedy':                   [80,  510, 'Greedy'],
+      'Intervals':                [240, 510, 'Intervals'],
+      'Math & Geometry':          [600, 510, 'Math & Geom'],
+      'Bit Manipulation':         [780, 510, 'Bit Manip'],
+    },
+    edges: [
+      ['Arrays & Hashing', 'Two Pointers'],
+      ['Arrays & Hashing', 'Stack'],
+      ['Two Pointers', 'Sliding Window'],
+      ['Two Pointers', 'Binary Search'],
+      ['Two Pointers', 'Linked List'],
+      ['Linked List', 'Trees'],
+      ['Trees', 'Tries'],
+      ['Trees', 'Heap / Priority Queue'],
+      ['Trees', 'Backtracking'],
+      ['Trees', 'Graphs'],
+      ['Backtracking', '1-D Dynamic Programming'],
+      ['Graphs', 'Advanced Graphs'],
+      ['1-D Dynamic Programming', '2-D Dynamic Programming'],
+    ],
+  };
+
+  function progressColor(pct) {
+    // Blend bg-elev (#1c1a14) → accent (#d96b3e)
+    const r = Math.round(28 + (217 - 28) * pct);
+    const g = Math.round(26 + (107 - 26) * pct);
+    const b = Math.round(20 + (62 - 20) * pct);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function renderDiagram() {
+    const wrap = document.getElementById('roadmap-diagram');
+    if (!wrap) return;
+    const L = DGR_LAYOUT;
+    const currentPats = new Set(PHASE_PATTERNS[state.phase.id] || []);
+
+    // Build edges
+    let edgesSvg = '';
+    for (const [from, to] of L.edges) {
+      const f = L.nodes[from], t = L.nodes[to];
+      if (!f || !t) continue;
+      const x1 = f[0], y1 = f[1] + L.nodeH / 2;
+      const x2 = t[0], y2 = t[1] - L.nodeH / 2;
+      const mid = (y1 + y2) / 2;
+      // Curved path
+      const path = `M ${x1} ${y1} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`;
+      const isActive = currentPats.has(from) || currentPats.has(to);
+      edgesSvg += `<path class="dgr-edge ${isActive ? 'active' : ''}" d="${path}" />`;
+    }
+
+    // Build nodes
+    let nodesSvg = '';
+    for (const [pat, [cx, cy, label]] of Object.entries(L.nodes)) {
+      const probs = problemsByPattern(pat);
+      const solved = probs.filter(p => state.roadmapSolved[p.s]).length;
+      const total = probs.length;
+      const pct = total ? solved / total : 0;
+      const fill = progressColor(pct);
+      const inPhase = currentPats.has(pat);
+      const stroke = inPhase ? 'var(--accent)' : 'var(--line)';
+      const strokeW = inPhase ? 1.5 : 1;
+      const textColor = pct > 0.5 ? 'var(--ink)' : 'var(--ink)';
+      const x = cx - L.nodeW / 2;
+      const y = cy - L.nodeH / 2;
+      nodesSvg += `
+        <g data-pattern="${pat.replace(/"/g, '&quot;')}" style="cursor:pointer">
+          <rect class="dgr-node-bg" x="${x}" y="${y}" width="${L.nodeW}" height="${L.nodeH}"
+                rx="3" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" />
+          <text class="dgr-node-text" x="${cx}" y="${cy - 3}" text-anchor="middle"
+                fill="${textColor}" font-family="var(--cn)" font-size="12.5" font-weight="500">${label}</text>
+          <text class="dgr-node-text" x="${cx}" y="${cy + 12}" text-anchor="middle"
+                fill="var(--ink-mute)" font-family="var(--mono)" font-size="10.5">${solved} / ${total}</text>
+        </g>
+      `;
+    }
+
+    wrap.innerHTML = `
+      <svg viewBox="0 0 ${L.width} ${L.height}" xmlns="http://www.w3.org/2000/svg">
+        ${edgesSvg}
+        ${nodesSvg}
+      </svg>
+    `;
+
+    // Wire up clicks: clicking a node expands its pattern below and scrolls
+    wrap.querySelectorAll('g[data-pattern]').forEach(g => {
+      g.addEventListener('click', async () => {
+        const pat = g.getAttribute('data-pattern');
+        state.expandedPatterns[pat] = true;
+        await saveExpanded();
+        renderRoadmap();
+        // Scroll into view
+        setTimeout(() => {
+          const blocks = document.querySelectorAll('.pattern-block');
+          for (const b of blocks) {
+            const name = b.querySelector('.pat-name');
+            if (name && name.textContent.includes(pat.split(' /')[0])) {
+              b.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              break;
+            }
+          }
+        }, 50);
+      });
+    });
+  }
+
+  function renderRoadmap() {
+    const body = document.getElementById('roadmap-body');
+    if (!body) return;
+
+    // Render the dependency diagram first
+    renderDiagram();
+
+    // Stats
+    const totalSolved = ROADMAP.filter(p => state.roadmapSolved[p.s]).length;
+    const total = ROADMAP.length;
+    document.getElementById('roadmap-total').innerHTML = `${totalSolved}<span class="of"> / ${total}</span>`;
+    document.getElementById('roadmap-progress').textContent = `${Math.round(totalSolved/total*100)}%`;
+
+    const byDiff = { Easy: 0, Medium: 0, Hard: 0 };
+    const byDiffTotal = { Easy: 0, Medium: 0, Hard: 0 };
+    ROADMAP.forEach(p => {
+      byDiffTotal[p.d]++;
+      if (state.roadmapSolved[p.s]) byDiff[p.d]++;
+    });
+    document.getElementById('roadmap-breakdown').innerHTML =
+      `<span>Easy <b>${byDiff.Easy}</b>/${byDiffTotal.Easy}</span>` +
+      `<span>Med <b>${byDiff.Medium}</b>/${byDiffTotal.Medium}</span>` +
+      `<span>Hard <b>${byDiff.Hard}</b>/${byDiffTotal.Hard}</span>`;
+
+    // Pattern blocks
+    body.innerHTML = '';
+    const currentPhasePatterns = new Set(PHASE_PATTERNS[state.phase.id] || []);
+    for (const pat of PATTERN_ORDER) {
+      const probs = problemsByPattern(pat);
+      if (probs.length === 0) continue;
+      const solvedCount = probs.filter(p => state.roadmapSolved[p.s]).length;
+      const pct = (solvedCount / probs.length) * 100;
+      const isExpanded = !!state.expandedPatterns[pat];
+      const inPhase = currentPhasePatterns.has(pat);
+
+      const block = document.createElement('div');
+      block.className = 'pattern-block' + (isExpanded ? ' expanded' : '') + (inPhase ? ' in-phase' : '');
+
+      // Header
+      const header = document.createElement('div');
+      header.className = 'pattern-header';
+      header.innerHTML = `
+        <span class="caret">▸</span>
+        <span class="pat-name">${pat}${inPhase ? ' ·' : ''}</span>
+        <div class="pat-bar"><div class="pat-bar-fill" style="width:${pct}%"></div></div>
+        <span class="pat-count">${solvedCount} / ${probs.length}</span>
+      `;
+      header.addEventListener('click', async () => {
+        state.expandedPatterns[pat] = !state.expandedPatterns[pat];
+        if (!state.expandedPatterns[pat]) delete state.expandedPatterns[pat];
+        await saveExpanded();
+        renderRoadmap();
+      });
+      block.appendChild(header);
+
+      // Problems
+      const problemsWrap = document.createElement('div');
+      problemsWrap.className = 'pattern-problems';
+      for (const pr of probs) {
+        const row = document.createElement('div');
+        const solved = !!state.roadmapSolved[pr.s];
+        let hidden = false;
+        if (state.filter === 'unsolved' && solved) hidden = true;
+        if (['Easy','Medium','Hard'].includes(state.filter) && state.filter !== pr.d) hidden = true;
+        row.className = 'prob-row' + (solved ? ' solved' : '') + (hidden ? ' hidden' : '');
+        row.innerHTML = `
+          <div class="prob-check"></div>
+          <span class="prob-name">${pr.n}</span>
+          <span class="diff ${pr.d}">${pr.d}</span>
+          <a class="prob-link" href="${lcUrl(pr.s)}" target="_blank">LC</a>
+          <a class="prob-link" href="${ncUrl(pr.s)}" target="_blank">NC</a>
+        `;
+        row.querySelector('.prob-check').addEventListener('click', async () => {
+          const wasSolved = !!state.roadmapSolved[pr.s];
+          if (wasSolved) {
+            delete state.roadmapSolved[pr.s];
+            // auto-decrement LC counter (floor at 0)
+            state.counters.count_lc = Math.max(0, (state.counters.count_lc || 0) - 1);
+          } else {
+            state.roadmapSolved[pr.s] = state.today;
+            state.counters.count_lc = (state.counters.count_lc || 0) + 1;
+          }
+          await Promise.all([saveRoadmap(), saveCounters()]);
+          renderRoadmap();
+          renderCounters();
+          renderRecommendations();
+        });
+        problemsWrap.appendChild(row);
+      }
+      block.appendChild(problemsWrap);
+      body.appendChild(block);
+    }
+
+    // Filter chips
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+      chip.classList.toggle('active', chip.dataset.filter === state.filter);
+      chip.onclick = () => {
+        state.filter = chip.dataset.filter;
+        renderRoadmap();
+      };
+    });
+  }
+
+  function renderDaily() {
+    const wrap = document.getElementById('daily-checklist');
+    wrap.innerHTML = '';
+    const tasks = state.phase.tasks || [];
+    let done = 0;
+    for (const tk of tasks) {
+      const isDone = !!state.dailyChecks[tk.id];
+      if (isDone) done++;
+      const li = document.createElement('li');
+      li.className = 'check-item' + (isDone ? ' done' : '');
+      li.innerHTML = `
+        <div class="check-box"></div>
+        <div class="check-content">
+          <span class="check-label">${loc(tk.label)}</span>
+          <span class="check-detail">${loc(tk.detail)}</span>
+        </div>
+      `;
+      li.addEventListener('click', async () => {
+        state.dailyChecks[tk.id] = !state.dailyChecks[tk.id];
+        if (!state.dailyChecks[tk.id]) delete state.dailyChecks[tk.id];
+        await saveDaily();
+        renderDaily();
+      });
+      wrap.appendChild(li);
+    }
+    document.getElementById('daily-progress').textContent = `${done} / ${tasks.length}`;
+  }
+
+  function renderWeekly() {
+    const wrap = document.getElementById('weekly-checklist');
+    wrap.innerHTML = '';
+    let done = 0;
+    for (const tk of WEEKLY_TASKS) {
+      const isDone = !!state.weeklyChecks[tk.id];
+      if (isDone) done++;
+      const li = document.createElement('li');
+      li.className = 'check-item' + (isDone ? ' done' : '');
+      li.innerHTML = `
+        <div class="check-box"></div>
+        <div class="check-content">
+          <span class="check-label">${loc(tk.label)}</span>
+          <span class="check-detail">${loc(tk.detail)}</span>
+        </div>
+      `;
+      li.addEventListener('click', async () => {
+        state.weeklyChecks[tk.id] = !state.weeklyChecks[tk.id];
+        if (!state.weeklyChecks[tk.id]) delete state.weeklyChecks[tk.id];
+        await saveWeekly();
+        renderWeekly();
+      });
+      wrap.appendChild(li);
+    }
+    document.getElementById('weekly-progress').textContent = `${done} / ${WEEKLY_TASKS.length}`;
+  }
+
+  function renderCounters() {
+    const wrap = document.getElementById('counters');
+    wrap.innerHTML = '';
+    for (const c of COUNTERS) {
+      const val = state.counters[c.key] || 0;
+      const el = document.createElement('div');
+      el.className = 'counter';
+      el.innerHTML = `
+        <span class="val ${val > 0 ? 'has-val' : ''}">${val}</span>
+        <div class="label">${loc(c.label)}</div>
+        <div class="target">${t('counter_target_prefix')}${c.target}</div>
+        <div class="counter-controls">
+          <button class="counter-btn" data-key="${c.key}" data-d="-1">−</button>
+          <button class="counter-btn" data-key="${c.key}" data-d="1">+</button>
+        </div>
+      `;
+      wrap.appendChild(el);
+    }
+    wrap.querySelectorAll('.counter-btn').forEach(b => {
+      b.addEventListener('click', async (e) => {
+        const key = e.target.dataset.key;
+        const d = parseInt(e.target.dataset.d);
+        state.counters[key] = Math.max(0, (state.counters[key] || 0) + d);
+        await saveCounters();
+        renderCounters();
+      });
+    });
+  }
+
+  function renderMilestones() {
+    const wrap = document.getElementById('milestones');
+    wrap.innerHTML = '';
+    const milestones = [
+      { date: PHASES[2].start, label: t('ms_practice_start') },
+      { date: PHASES[3].start, label: t('ms_target_start') },
+      { date: PHASES[0].end, label: t('ms_phase_n_check', 1) },
+      { date: PHASES[1].end, label: t('ms_phase_n_check', 2) },
+      { date: PHASES[2].end, label: t('ms_phase_n_check', 3) },
+      { date: PHASES[3].end, label: t('ms_phase_n_check', 4) },
+      { date: PHASES[4].end, label: t('ms_plan_end') },
+    ];
+    const upcoming = milestones
+      .map(m => ({ ...m, days: daysBetween(state.today, m.date) }))
+      .filter(m => m.days >= -1)
+      .sort((a, b) => a.days - b.days)
+      .slice(0, 4);
+
+    for (const m of upcoming) {
+      const el = document.createElement('div');
+      let cls = 'milestone';
+      if (m.days <= 7 && m.days >= 0) cls += ' urgent';
+      if (m.days < 0) cls += ' passed';
+      el.className = cls;
+      const cd = m.days === 0 ? t('ms_today') : m.days < 0 ? t('ms_passed', -m.days) : t('ms_in', m.days);
+      el.innerHTML = `
+        <div class="ms-date">${fmtDate(m.date)}</div>
+        <div class="ms-label">${m.label}</div>
+        <div class="ms-countdown">${cd}</div>
+      `;
+      wrap.appendChild(el);
+    }
+  }
+
+  function renderCheckpoint() {
+    const phase = state.phase;
+    const list = document.getElementById('checkpoint-list');
+    list.innerHTML = '';
+    for (const c of phase.checkpoint || []) {
+      const li = document.createElement('li');
+      li.textContent = loc(c);
+      list.appendChild(li);
+    }
+    let progressPct = 0;
+    let dayMeta = '';
+    let endMeta = '';
+    const isManualPreview = state.manualPhase && (state.today < phase.start || state.today > phase.end);
+    if (isManualPreview) {
+      if (state.today < phase.start) {
+        progressPct = 0;
+        dayMeta = t('cp_preview_not_started');
+        endMeta = t('cp_starts_in', fmtDate(phase.start), daysBetween(state.today, phase.start));
+      } else {
+        progressPct = 100;
+        dayMeta = t('cp_preview_ended');
+        endMeta = t('cp_ended_ago', fmtDate(phase.end), daysBetween(phase.end, state.today));
+      }
+    } else if (phase.beforeStart) {
+      progressPct = 0;
+      dayMeta = t('cp_phase1_not_started');
+      endMeta = t('cp_starts', fmtDate(phase.start));
+    } else {
+      const totalDays = daysBetween(phase.start, phase.end) + 1;
+      const passedDays = Math.min(daysBetween(phase.start, state.today) + 1, totalDays);
+      progressPct = Math.max(0, Math.min(100, (passedDays / totalDays) * 100));
+      dayMeta = t('cp_day_x_of_y', passedDays, totalDays);
+      const daysToEnd = daysBetween(state.today, phase.end);
+      endMeta = daysToEnd >= 0 ? t('cp_days_to_check', daysToEnd) : t('cp_phase_ended');
+    }
+    document.getElementById('phase-progress-fill').style.width = progressPct + '%';
+    document.getElementById('phase-progress-meta').textContent = `${Math.round(progressPct)}%`;
+    document.getElementById('phase-day-meta').textContent = dayMeta;
+    document.getElementById('phase-end-meta').textContent = endMeta;
+  }
+
+  function renderNotes() {
+    const el = document.getElementById('notes');
+    el.value = state.notes || '';
+    el.placeholder = t('notes_placeholder');
+    let saveTimer;
+    el.oninput = () => {
+      state.notes = el.value;
+      document.getElementById('notes-status').textContent = t('notes_saving');
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(async () => {
+        await saveNotes();
+        const timeStr = new Date().toLocaleTimeString(state.lang === 'zh' ? 'zh-CN' : 'en-US', {hour:'2-digit',minute:'2-digit'});
+        document.getElementById('notes-status').textContent = t('notes_saved_at') + timeStr;
+      }, 600);
+    };
+    document.getElementById('notes-status').textContent = state.notes ? t('notes_loaded') : t('notes_empty');
+  }
+
+  // ========== SETTINGS UI ==========
+  function openSettings() {
+    document.getElementById('settings-startdate').value = state.startDate;
+    document.getElementById('storage-backend').textContent =
+      STORAGE_BACKEND === 'claude' ? t('settings_storage_claude') : t('settings_storage_local');
+    refreshLangOpts();
+    document.getElementById('settings-overlay').classList.add('open');
+  }
+  function closeSettings() {
+    document.getElementById('settings-overlay').classList.remove('open');
+  }
+  async function saveSettingsForm() {
+    const v = document.getElementById('settings-startdate').value;
+    if (!v) { alert(state.lang === 'zh' ? '请选择日期' : 'Please pick a date'); return; }
+    await updateStartDate(v);
+    closeSettings();
+  }
+  async function pickLang(lang) {
+    if (lang === state.lang) return;
+    state.lang = lang;
+    await saveLang();
+    refreshLangOpts();
+    render();
+  }
+  function refreshLangOpts() {
+    const zhBtn = document.getElementById('lang-opt-zh');
+    const enBtn = document.getElementById('lang-opt-en');
+    if (!zhBtn || !enBtn) return;
+    zhBtn.classList.toggle('active', state.lang === 'zh');
+    enBtn.classList.toggle('active', state.lang === 'en');
+  }
+  window.openSettings = openSettings;
+  window.closeSettings = closeSettings;
+  window.saveSettingsForm = saveSettingsForm;
+  window.pickLang = pickLang;
+  window.toggleLang = toggleLang;
+
+  // ========== STATIC LABELS (re-applied on language switch) ==========
+  function applyStaticLabels() {
+    const set = (id, val, html) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (html) el.innerHTML = val; else el.textContent = val;
+    };
+    set('app-title', t('app_title_html'), true);
+    // Build subtitle dynamically with start/end dates
+    set('app-subtitle', `${fmtDate(PHASES[0].start)} — ${fmtDate(PHASES[4].end)} · ${t('app_subtitle')}`);
+    set('phase-click-hint', t('phase_click_hint'));
+    set('daily-title', t('daily_title'));
+    set('totals-title', t('totals_title'));
+    set('weekly-title', t('weekly_title'));
+    set('milestones-title', t('milestones_title'));
+    set('checkpoint-title', t('checkpoint_title'));
+    set('notes-title', t('notes_title'));
+    set('links-title', t('links_title'));
+    set('roadmap-title', t('roadmap_title'));
+    set('diagram-label', t('diagram_label'));
+    set('principles-title', t('principles_title'));
+    set('lang-btn', t('lang_btn_other'));
+    set('settings-btn-el', t('settings_btn'));
+    set('reset-btn-el', t('reset_btn'));
+    set('settings-h', t('settings_h'));
+    set('settings-lang-label', t('settings_lang_label'));
+    set('settings-startdate-label', t('settings_startdate_label'));
+    set('settings-startdate-help', t('settings_startdate_help'), true);
+    set('settings-storage-backend-label', t('settings_storage_backend'));
+    set('settings-total-days-label', t('settings_total_days'));
+    set('settings-total-days-val', t('settings_total_days_val'));
+    set('settings-cancel', t('settings_cancel'));
+    set('settings-save', t('settings_save'));
+    set('settings-show-tour-link', t('settings_show_tour'));
+    document.documentElement.lang = state.lang === 'zh' ? 'zh-CN' : 'en';
+    document.documentElement.style.setProperty('--today-label', `"${t('today_label')}"`);
+
+    // Quick links (dynamic)
+    const linksGrid = document.getElementById('links-grid');
+    if (linksGrid) {
+      linksGrid.innerHTML = QUICK_LINKS.map(lk => `
+        <a class="quick-link" href="${lk.url}" target="_blank">
+          <span class="lk-name">${lk.name}</span>
+          <span class="lk-desc">${loc(lk.desc)}</span>
+        </a>
+      `).join('');
+    }
+
+    // Principles (dynamic)
+    const principlesGrid = document.getElementById('principles-grid');
+    if (principlesGrid) {
+      principlesGrid.innerHTML = PRINCIPLES.map(p => {
+        const bold = state.lang === 'zh' ? p.zh_b : p.en_b;
+        const text = state.lang === 'zh' ? p.zh_t : p.en_t;
+        return `<div class="principle"><b>${bold}</b> ${text}</div>`;
+      }).join('');
+    }
+
+    // Filter chips (dynamic with i18n labels)
+    const filtersWrap = document.getElementById('roadmap-filters');
+    if (filtersWrap) {
+      const chips = [
+        ['all', t('filter_all')],
+        ['unsolved', t('filter_unsolved')],
+        ['Easy', t('filter_easy')],
+        ['Medium', t('filter_med')],
+        ['Hard', t('filter_hard')],
+      ];
+      filtersWrap.innerHTML = chips.map(([f, label]) =>
+        `<button class="filter-chip ${state.filter === f ? 'active' : ''}" data-filter="${f}">${label}</button>`
+      ).join('');
+    }
+  }
+
+  // ========== RESET ==========
+  async function resetAll() {
+    if (!confirm(t('confirm_reset'))) return;
+    try {
+      const keys = await storeListKeys();
+      for (const k of keys) {
+        await storeDelete(k);
+      }
+      location.reload();
+    } catch (e) { alert('reset failed: ' + e); }
+  }
+
+  // ========== TUTORIAL ==========
+  let tour = { active: false, step: 0 };
+
+  const TUTORIAL_STEPS = [
+    // 0. Language pick (special: shown bilingually, no skip)
+    { type: 'lang_pick' },
+    // 1. Welcome + start date
+    { type: 'welcome' },
+    // 2. Today's card
+    { type: 'spotlight', target: '.today-card', titleKey: 'tour_t_title', bodyKey: 'tour_t_body' },
+    // 3. Today's recommendations (only if rendered)
+    { type: 'spotlight', target: '.today-recos', titleKey: 'tour_today_reco_title', bodyKey: 'tour_today_reco_body', optional: true },
+    // 4. Phase strip
+    { type: 'spotlight', target: '.phase-strip-wrap', titleKey: 'tour_p_title', bodyKey: 'tour_p_body' },
+    // 5. Roadmap
+    { type: 'spotlight', target: '.roadmap-card', titleKey: 'tour_r_title', bodyKey: 'tour_r_body' },
+    // 6. Settings
+    { type: 'spotlight', target: '#settings-btn-el', titleKey: 'tour_s_title', bodyKey: 'tour_s_body' },
+    // 7. Done
+    { type: 'done' },
+  ];
+
+  function startTour() {
+    tour.active = true;
+    tour.step = 0;
+    document.getElementById('tour-blocker').classList.add('active');
+    renderTourStep();
+    window.addEventListener('scroll', updateTourSpotlight, { passive: true });
+    window.addEventListener('resize', updateTourSpotlight);
+  }
+
+  async function finishTour() {
+    tour.active = false;
+    document.getElementById('tour-blocker').classList.remove('active');
+    document.getElementById('tour-blocker').classList.remove('has-spotlight');
+    window.removeEventListener('scroll', updateTourSpotlight);
+    window.removeEventListener('resize', updateTourSpotlight);
+    await storeSet('onboarded', true);
+  }
+
+  function tourNext() {
+    // Skip optional steps where the target is missing
+    let nextStep = tour.step + 1;
+    while (nextStep < TUTORIAL_STEPS.length) {
+      const s = TUTORIAL_STEPS[nextStep];
+      if (s.optional && s.target && !document.querySelector(s.target)) {
+        nextStep++;
+      } else {
+        break;
+      }
+    }
+    if (nextStep >= TUTORIAL_STEPS.length) {
+      finishTour();
+      return;
+    }
+    tour.step = nextStep;
+    renderTourStep();
+  }
+
+  function tourSkip() { finishTour(); }
+
+  function renderTourStep() {
+    const step = TUTORIAL_STEPS[tour.step];
+    const blocker = document.getElementById('tour-blocker');
+    const tooltip = document.getElementById('tour-tooltip');
+
+    // Reset tooltip position styles (will be overridden by spotlight if needed)
+    tooltip.style.top = '';
+    tooltip.style.left = '';
+    tooltip.style.transform = '';
+
+    if (step.type === 'lang_pick') {
+      blocker.classList.remove('has-spotlight');
+      renderLangPickStep(tooltip);
+    } else if (step.type === 'welcome') {
+      blocker.classList.remove('has-spotlight');
+      renderWelcomeStep(tooltip);
+    } else if (step.type === 'spotlight') {
+      blocker.classList.add('has-spotlight');
+      renderSpotlightStep(step, tooltip);
+    } else if (step.type === 'done') {
+      blocker.classList.remove('has-spotlight');
+      renderDoneStep(tooltip);
+    }
+  }
+
+  function renderLangPickStep(tooltip) {
+    tooltip.innerHTML = `
+      <h4 class="tour-bilingual-title">
+        10-Week Battle Log
+        <span class="alt">10周作战日志</span>
+      </h4>
+      <div class="tour-bilingual-sub">
+        Pick your language · 请选择语言
+      </div>
+      <div class="tour-langs">
+        <button onclick="tourPickLang('zh')">中文</button>
+        <button onclick="tourPickLang('en')">English</button>
+      </div>
+    `;
+  }
+
+  async function tourPickLang(lang) {
+    state.lang = lang;
+    await saveLang();
+    render();
+    tourNext();
+  }
+  window.tourPickLang = tourPickLang;
+
+  function renderWelcomeStep(tooltip) {
+    const total = TUTORIAL_STEPS.length;
+    tooltip.innerHTML = `
+      <h4>${t('tour_w_title')}</h4>
+      <p>${t('tour_w_body')}</p>
+      <div class="tour-extra">
+        <label>${t('tour_date_label')}</label>
+        <input type="date" id="tour-date-input" value="${state.startDate}" />
+      </div>
+      <div class="tour-footer">
+        <span class="tour-progress">${tour.step + 1} / ${total}</span>
+        <div class="tour-actions">
+          <button class="btn-secondary" onclick="tourSkip()">${t('tour_skip')}</button>
+          <button class="btn-primary" onclick="tourConfirmDate()">${t('tour_set_date')}</button>
+        </div>
+      </div>
+    `;
+  }
+
+  async function tourConfirmDate() {
+    const v = document.getElementById('tour-date-input').value;
+    if (v && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
+      await updateStartDate(v);
+    }
+    tourNext();
+  }
+  window.tourConfirmDate = tourConfirmDate;
+
+  function renderSpotlightStep(step, tooltip) {
+    const target = document.querySelector(step.target);
+    if (!target) {
+      // Target not found — auto-advance
+      setTimeout(() => tourNext(), 50);
+      return;
+    }
+    // Scroll target into view first
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Render tooltip content immediately (it gets positioned after scroll)
+    const total = TUTORIAL_STEPS.length;
+    const isLast = tour.step === total - 1;
+    tooltip.innerHTML = `
+      <h4>${t(step.titleKey)}</h4>
+      <p>${t(step.bodyKey)}</p>
+      <div class="tour-footer">
+        <span class="tour-progress">${tour.step + 1} / ${total}</span>
+        <div class="tour-actions">
+          <button class="btn-secondary" onclick="tourSkip()">${t('tour_skip')}</button>
+          <button class="btn-primary" onclick="tourNext()">${isLast ? t('tour_start') : t('tour_next')}</button>
+        </div>
+      </div>
+    `;
+    // Position spotlight + tooltip after scroll
+    setTimeout(() => positionSpotlight(target), 350);
+  }
+
+  function positionSpotlight(target) {
+    const spotlight = document.getElementById('tour-spotlight');
+    const tooltip = document.getElementById('tour-tooltip');
+    if (!target || !spotlight || !tooltip) return;
+
+    const rect = target.getBoundingClientRect();
+    const pad = 10;
+    spotlight.style.left = (rect.left - pad) + 'px';
+    spotlight.style.top = (rect.top - pad) + 'px';
+    spotlight.style.width = (rect.width + pad * 2) + 'px';
+    spotlight.style.height = (rect.height + pad * 2) + 'px';
+
+    // Tooltip positioning: prefer below, then above, then to the side
+    const viewportH = window.innerHeight;
+    const viewportW = window.innerWidth;
+    const ttRect = tooltip.getBoundingClientRect();
+    const ttH = ttRect.height || 200;
+    const ttW = ttRect.width || 360;
+    const gap = 16;
+
+    let top, left;
+    const spaceBelow = viewportH - rect.bottom;
+    const spaceAbove = rect.top;
+
+    if (spaceBelow >= ttH + gap + 20) {
+      top = rect.bottom + gap;
+    } else if (spaceAbove >= ttH + gap + 20) {
+      top = rect.top - ttH - gap;
+    } else {
+      // Neither — center vertically in viewport
+      top = Math.max(20, (viewportH - ttH) / 2);
+    }
+
+    // Center horizontally on target, clamp to viewport
+    const centerX = rect.left + rect.width / 2;
+    left = centerX - ttW / 2;
+    if (left < 16) left = 16;
+    if (left + ttW > viewportW - 16) left = viewportW - ttW - 16;
+
+    tooltip.style.top = top + 'px';
+    tooltip.style.left = left + 'px';
+    tooltip.style.transform = 'none';
+  }
+
+  function updateTourSpotlight() {
+    if (!tour.active) return;
+    const step = TUTORIAL_STEPS[tour.step];
+    if (!step || step.type !== 'spotlight') return;
+    const target = document.querySelector(step.target);
+    if (target) positionSpotlight(target);
+  }
+
+  function renderDoneStep(tooltip) {
+    const total = TUTORIAL_STEPS.length;
+    tooltip.innerHTML = `
+      <h4 style="text-align:center;">${t('tour_d_title')}</h4>
+      <p>${t('tour_d_body')}</p>
+      <div class="tour-footer">
+        <span class="tour-progress">${total} / ${total}</span>
+        <div class="tour-actions">
+          <button class="btn-primary" onclick="tourSkip()">${t('tour_d_btn')}</button>
+        </div>
+      </div>
+    `;
+  }
+
+  window.tourNext = tourNext;
+  window.tourSkip = tourSkip;
+  window.startTour = startTour;
+
+  // ========== INIT ==========
+  (async () => {
+    await loadState();
+    render();
+    document.getElementById('root').classList.add('loaded');
+
+    // First-time tutorial
+    const onboarded = await storeGet('onboarded');
+    if (!onboarded) {
+      // small delay so the page settles before the tour overlay
+      setTimeout(() => startTour(), 300);
+    }
+
+    // Re-check date every minute (in case user leaves tab open past midnight)
+    setInterval(async () => {
+      const todayStr = today();
+      if (todayStr !== state.today) {
+        await loadState();
+        render();
+      }
+    }, 60000);
+  })();
+</script>
+</body>
+</html>
