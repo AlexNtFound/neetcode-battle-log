@@ -81,6 +81,12 @@ battle-log/
 
 150 题路线图来自 [NeetCode](https://neetcode.io/roadmap)——链接指向原版 LeetCode 题目和 NeetCode 视频解法。本工具不托管任何题目内容，只是上面一层薄薄的组织层。
 
+## 作者
+
+由 **Alex Nan** 制作 —— [github.com/AlexNtFound](https://github.com/AlexNtFound)。
+
+如果你 fork 或再分发本项目，请保留 `LICENSE` 中的版权声明以及 `index.html` 顶部的 banner 注释。
+
 ## 协议
 
-MIT —— 见 [LICENSE](./LICENSE)。
+MIT —— 见 [LICENSE](./LICENSE)。版权 © 2026 Alex Nan。

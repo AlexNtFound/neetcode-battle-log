@@ -81,6 +81,12 @@ That's it. No `src/`, no `dist/`, no `node_modules/`. The file you ship is the f
 
 The 150-problem roadmap is from [NeetCode](https://neetcode.io/roadmap) — links go to the original LeetCode problems and NeetCode video solutions. This tracker doesn't host any problem content; it's a thin organizational layer on top.
 
+## Author
+
+Built by **Alex Nan** — [github.com/AlexNtFound](https://github.com/AlexNtFound).
+
+If you fork or redistribute, please preserve the copyright notice in `LICENSE` and the banner comment at the top of `index.html`.
+
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT — see [LICENSE](./LICENSE). Copyright (c) 2026 Alex Nan.

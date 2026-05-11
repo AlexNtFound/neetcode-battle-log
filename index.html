@@ -1,9 +1,18 @@
 <!DOCTYPE html>
+<!--
+  10-Week Battle Log · 10 周作战日志
+  Copyright (c) 2026 Alex Nan · https://github.com/AlexNtFound
+  Licensed under MIT — see LICENSE. Preserve this notice when redistributing.
+-->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>10周作战日志</title>
+<meta name="author" content="Alex Nan">
+<meta name="copyright" content="Copyright (c) 2026 Alex Nan">
+<meta name="description" content="10-week interview prep tracker built on the NeetCode 150 roadmap. 面试备战作战日志 · 单文件 · 双语.">
+<link rel="author" href="https://github.com/AlexNtFound">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
@@ -337,6 +346,20 @@
     font-size: 10.5px; cursor: pointer; letter-spacing: 0.15em; text-transform: uppercase;
   }
   .reset-link button:hover { color: var(--accent); }
+
+  /* Credit footer */
+  .credit {
+    text-align: center; margin-top: 14px;
+    font-family: var(--mono); font-size: 10px;
+    color: var(--ink-faint); letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .credit a {
+    color: var(--ink-faint); text-decoration: none;
+    border-bottom: 1px dotted var(--ink-faint);
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .credit a:hover { color: var(--accent); border-color: var(--accent); }
 
   /* Loading */
   .loading { opacity: 0; transition: opacity 0.3s; }
@@ -861,6 +884,10 @@
     <button class="settings-btn" id="settings-btn-el" onclick="openSettings()">⚙ 设置</button>
     &nbsp;&nbsp;
     <button id="reset-btn-el" onclick="resetAll()">⟲ reset all data</button>
+  </div>
+
+  <div class="credit">
+    <a href="https://github.com/AlexNtFound" target="_blank" rel="noopener">Alex Nan · github</a>
   </div>
 
   <!-- Settings Drawer -->
