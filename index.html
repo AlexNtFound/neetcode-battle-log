@@ -622,6 +622,121 @@
     text-align: center; font-family: var(--cn); font-size: 13px;
     color: var(--ink-mute); margin-top: 6px; line-height: 1.6;
   }
+
+  /* ========== PET ========== */
+  .pet-container {
+    position: fixed; left: 0; bottom: 16px;
+    font-size: 28px; line-height: 1;
+    z-index: 50; cursor: pointer; user-select: none;
+    will-change: transform;
+    transition: filter 0.3s;
+    pointer-events: auto;
+  }
+  .pet-container:hover { filter: brightness(1.2); }
+  .pet-container.legendary {
+    filter: drop-shadow(0 0 10px var(--accent)) drop-shadow(0 0 18px var(--accent-faint));
+  }
+  .pet-glyph { display: inline-block; }
+
+  .pet-toast {
+    position: fixed; bottom: 88px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg-elev); border: 1px solid var(--accent);
+    color: var(--ink); padding: 10px 18px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.05em;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    z-index: 100; max-width: 80vw; text-align: center;
+  }
+  .pet-toast.show {
+    opacity: 1; transform: translateX(-50%) translateY(0);
+  }
+
+  .pet-card {
+    position: fixed; bottom: 80px; right: 24px; width: 280px;
+    background: var(--bg-card); border: 1px solid var(--line);
+    padding: 18px;
+    z-index: 90;
+    opacity: 0; pointer-events: none;
+    transform: translateY(10px);
+    transition: opacity 0.2s, transform 0.2s;
+    max-width: calc(100vw - 48px);
+  }
+  .pet-card.open {
+    opacity: 1; pointer-events: auto; transform: translateY(0);
+  }
+  .pet-card-head {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+  }
+  .pet-card-emoji { font-size: 32px; line-height: 1; }
+  .pet-card-name {
+    font-family: var(--serif); font-size: 18px; color: var(--ink); line-height: 1.2;
+  }
+  .pet-card-stage {
+    font-family: var(--mono); font-size: 10.5px; color: var(--ink-mute);
+    text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px;
+  }
+  .pet-card-x {
+    margin-left: auto; background: none; border: none;
+    color: var(--ink-mute); font-size: 20px; cursor: pointer;
+    padding: 0 4px; line-height: 1;
+  }
+  .pet-card-x:hover { color: var(--ink); }
+  .pet-card-flavor {
+    font-family: var(--cn); font-size: 12px; color: var(--ink-mute);
+    font-style: italic; margin-bottom: 14px; line-height: 1.5;
+  }
+  .pet-card-progress-wrap { margin-bottom: 12px; }
+  .pet-card-progress-bar {
+    height: 4px; background: var(--bg); border: 1px solid var(--line);
+    overflow: hidden; margin-bottom: 6px;
+  }
+  .pet-card-progress-bar > div {
+    height: 100%; background: var(--accent); transition: width 0.5s;
+  }
+  .pet-card-progress-meta {
+    font-family: var(--mono); font-size: 10px; color: var(--ink-faint);
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .pet-card-stats {
+    display: flex; flex-direction: column; gap: 8px;
+    font-family: var(--mono); font-size: 11px;
+    border-top: 1px solid var(--line); padding-top: 12px; margin-bottom: 12px;
+  }
+  .pet-card-stats > div { display: flex; justify-content: space-between; align-items: baseline; }
+  .pet-card-stats span {
+    color: var(--ink-faint); text-transform: uppercase;
+    letter-spacing: 0.1em; font-size: 10px;
+  }
+  .pet-card-stats b { color: var(--ink); font-weight: 400; }
+  .pet-card-stats b.has-mult { color: var(--accent); }
+  .pet-card-footer button {
+    width: 100%; background: transparent; border: 1px solid var(--line);
+    color: var(--ink-mute); padding: 6px 12px;
+    font-family: var(--mono); font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .pet-card-footer button:hover {
+    color: var(--ink); border-color: var(--ink-mute);
+  }
+
+  .pet-show-btn {
+    position: fixed; bottom: 16px; right: 24px;
+    background: var(--bg-card); border: 1px solid var(--line);
+    color: var(--ink-mute); padding: 8px 12px;
+    font-family: var(--mono); font-size: 14px;
+    cursor: pointer; z-index: 50;
+    transition: all 0.15s;
+  }
+  .pet-show-btn:hover {
+    border-color: var(--accent); color: var(--accent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pet-container { transition: none; }
+    .pet-toast { transition: opacity 0.1s; }
+  }
 </style>
 </head>
 <body>
@@ -787,6 +902,14 @@
 
 </div>
 
+<!-- Pet (outside .container so position:fixed isn't affected by parent transforms) -->
+<div id="pet-container" class="pet-container" onclick="togglePetCard()" style="display:none">
+  <span class="pet-glyph">🥚</span>
+</div>
+<div id="pet-card" class="pet-card"></div>
+<div id="pet-toast" class="pet-toast"></div>
+<button id="pet-show-btn" class="pet-show-btn" onclick="togglePetHidden()" style="display:none" title="show pet">🐾</button>
+
 <script>
   // ========== I18N ==========
   const I18N = {
@@ -900,6 +1023,16 @@
       tour_d_btn: '开始使用',
       // Settings "Show tutorial again"
       settings_show_tour: '重新看一遍 tutorial',
+      // Pet
+      pet_stage_1: '幼年', pet_stage_2: '少年', pet_stage_3: '成年', pet_stage_4: '成熟', pet_stage_5: '传奇',
+      pet_streak: '连续天数', pet_days: '天',
+      pet_today_xp: '今日 XP', pet_born: '出生于',
+      pet_total_xp: '总', pet_to_next: '距下一阶段',
+      pet_max_stage: '已达最高阶段',
+      pet_hide: '藏起来 · hide', pet_show: '显示宠物',
+      pet_levelup: '🎉 进化! 抵达 {0} 阶段',
+      pet_hatched: '✨ 你获得了一只 {0}!',
+      pet_capped: '今日 XP 已达上限 · 明天再来',
     },
     en: {
       app_title_html: '10-Week <span class="accent">Battle</span> Log',
@@ -993,6 +1126,16 @@
       tour_d_body: "Open this every day. First action: look at \"Today's recommended\" at the top, click LC, start your first problem.<br><br>One thing to remember: <b>90% doing, not choosing</b>.",
       tour_d_btn: "Let's go",
       settings_show_tour: 'Show tutorial again',
+      // Pet
+      pet_stage_1: 'Hatchling', pet_stage_2: 'Young', pet_stage_3: 'Adult', pet_stage_4: 'Mature', pet_stage_5: 'Legendary',
+      pet_streak: 'streak', pet_days: 'days',
+      pet_today_xp: 'today xp', pet_born: 'born',
+      pet_total_xp: 'total', pet_to_next: 'to next',
+      pet_max_stage: 'Max stage reached',
+      pet_hide: 'Hide pet', pet_show: 'Show pet',
+      pet_levelup: '🎉 Evolved! Reached stage {0}',
+      pet_hatched: '✨ You got a {0}!',
+      pet_capped: "Today's XP cap reached · back tomorrow",
     },
   };
 
@@ -2153,6 +2296,8 @@
           renderRoadmap();
           renderCounters();
           renderRecommendations();
+          // Pet XP: only on solving (not un-checking)
+          if (!wasSolved) await awardXp(1);
         });
         problemsWrap.appendChild(row);
       }
@@ -2188,10 +2333,12 @@
         </div>
       `;
       li.addEventListener('click', async () => {
+        const wasChecked = !!state.dailyChecks[tk.id];
         state.dailyChecks[tk.id] = !state.dailyChecks[tk.id];
         if (!state.dailyChecks[tk.id]) delete state.dailyChecks[tk.id];
         await saveDaily();
         renderDaily();
+        if (!wasChecked) await awardXp(1);
       });
       wrap.appendChild(li);
     }
@@ -2215,10 +2362,12 @@
         </div>
       `;
       li.addEventListener('click', async () => {
+        const wasChecked = !!state.weeklyChecks[tk.id];
         state.weeklyChecks[tk.id] = !state.weeklyChecks[tk.id];
         if (!state.weeklyChecks[tk.id]) delete state.weeklyChecks[tk.id];
         await saveWeekly();
         renderWeekly();
+        if (!wasChecked) await awardXp(1);
       });
       wrap.appendChild(li);
     }
@@ -2770,11 +2919,348 @@
   window.tourSkip = tourSkip;
   window.startTour = startTour;
 
+  // ========== PET SYSTEM ==========
+  const PET_SPECIES = [
+    { id: 'dragon', emoji: '🐉',
+      name:   { zh: '火龙',  en: 'Dragon' },
+      flavor: { zh: '古老智慧, 看见 LC 题就两眼放光', en: 'Ancient wisdom. Eyes light up at every LC.' } },
+    { id: 'wolf', emoji: '🐺',
+      name:   { zh: '银狼',  en: 'Wolf' },
+      flavor: { zh: '孤狼, 不需要队伍, 自己刷完 150', en: 'Lone wolf. No team — solves all 150 alone.' } },
+    { id: 'fox', emoji: '🦊',
+      name:   { zh: '狡狐',  en: 'Fox' },
+      flavor: { zh: 'DP 题专家, 善于思考', en: 'DP specialist. Thinks before pouncing.' } },
+    { id: 'turtle', emoji: '🐢',
+      name:   { zh: '老龟',  en: 'Turtle' },
+      flavor: { zh: '慢但稳, 是坚持的化身', en: 'Slow but steady — the embodiment of consistency.' } },
+    { id: 'owl', emoji: '🦉',
+      name:   { zh: '智枭',  en: 'Owl' },
+      flavor: { zh: '夜猫子, 凌晨刷题伴侣', en: 'Night owl. Your 2am grind buddy.' } },
+    { id: 'cat', emoji: '🐱',
+      name:   { zh: '墨猫',  en: 'Cat' },
+      flavor: { zh: '懒散但聪明, 一击必杀', en: 'Lazy but sharp — one strike wins it.' } },
+  ];
+
+  const PET_STAGES = [
+    { min: 0,   max: 9,         nameKey: 'pet_stage_1', size: 22 },
+    { min: 10,  max: 49,        nameKey: 'pet_stage_2', size: 28 },
+    { min: 50,  max: 149,       nameKey: 'pet_stage_3', size: 36 },
+    { min: 150, max: 349,       nameKey: 'pet_stage_4', size: 44 },
+    { min: 350, max: Infinity,  nameKey: 'pet_stage_5', size: 52 },
+  ];
+
+  const PET_DAILY_CAP = 10;
+
+  let pet = null;
+
+  function petStageIdx(totalXp) {
+    for (let i = 0; i < PET_STAGES.length; i++) {
+      if (totalXp >= PET_STAGES[i].min && totalXp <= PET_STAGES[i].max) return i;
+    }
+    return PET_STAGES.length - 1;
+  }
+
+  function streakMultiplier(streak) {
+    if (streak >= 21) return 2.5;
+    if (streak >= 14) return 2.0;
+    if (streak >= 7)  return 1.5;
+    return 1.0;
+  }
+
+  function daysBetweenDates(a, b) {
+    const da = new Date(a + 'T00:00:00');
+    const db = new Date(b + 'T00:00:00');
+    return Math.round((db - da) / 86400000);
+  }
+
+  function getPetSpecies() {
+    return PET_SPECIES.find(s => s.id === (pet && pet.species)) || PET_SPECIES[0];
+  }
+
+  async function loadPet() {
+    const saved = await storeGet('pet');
+    if (saved && saved.species) {
+      pet = saved;
+      pet.dailyXp = pet.dailyXp || {};
+      pet.hidden  = !!pet.hidden;
+      pet.streak  = pet.streak || 0;
+      pet.totalXp = pet.totalXp || 0;
+    } else {
+      // First-time hatch
+      const species = PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)];
+      pet = {
+        species: species.id,
+        bornAt: state.today,
+        totalXp: 0,
+        streak: 0,
+        lastXpDate: null,
+        dailyXp: {},
+        hidden: false,
+      };
+      await savePet();
+      // Toast on next frame so the pet is already rendered
+      setTimeout(() => showPetToast(t('pet_hatched', loc(species.name))), 600);
+    }
+  }
+
+  async function savePet() {
+    await storeSet('pet', pet);
+  }
+
+  async function awardXp(amount) {
+    if (!pet || !amount || amount <= 0) return;
+    const today = state.today;
+    const todayXp = pet.dailyXp[today] || 0;
+    const room = Math.max(0, PET_DAILY_CAP - todayXp);
+    const granted = Math.min(amount, room);
+    if (granted <= 0) {
+      // already capped — flash a subtle toast once per call
+      showPetToast(t('pet_capped'));
+      return;
+    }
+
+    // Streak update happens once per day on first XP
+    if (pet.lastXpDate !== today) {
+      if (pet.lastXpDate) {
+        const gap = daysBetweenDates(pet.lastXpDate, today);
+        if (gap === 1) pet.streak += 1;
+        else if (gap > 1) pet.streak = 1;
+        // gap === 0 impossible here since lastXpDate !== today
+      } else {
+        pet.streak = 1;
+      }
+      pet.lastXpDate = today;
+    }
+
+    const mult = streakMultiplier(pet.streak);
+    const effective = Math.round(granted * mult);
+
+    const oldStage = petStageIdx(pet.totalXp);
+    pet.totalXp += effective;
+    pet.dailyXp[today] = todayXp + granted;
+    await savePet();
+
+    const newStage = petStageIdx(pet.totalXp);
+    if (newStage > oldStage) {
+      petLevelUp(newStage + 1);
+    } else {
+      petCelebrate();
+    }
+    renderPet();
+    if (document.getElementById('pet-card').classList.contains('open')) {
+      renderPetCard();
+    }
+  }
+
+  // ----- Animation engine -----
+  const petAnim = {
+    x: 60, targetX: 60,
+    state: 'idle',          // 'idle' | 'walking'
+    nextDecisionAt: 0,
+    celebrateUntil: 0,
+    facing: 1,
+    running: false,
+    reduced: false,
+  };
+
+  function petBox() { return document.getElementById('pet-container'); }
+
+  function petTick(now) {
+    if (!pet || pet.hidden) { petAnim.running = false; return; }
+    if (document.hidden) {
+      // Pause silently
+      setTimeout(() => requestAnimationFrame(petTick), 500);
+      return;
+    }
+
+    const box = petBox();
+    if (!box) { petAnim.running = false; return; }
+
+    const stageCfg = PET_STAGES[petStageIdx(pet.totalXp)];
+    const sizePx = stageCfg.size;
+    const maxX = Math.max(60, window.innerWidth - sizePx - 30);
+
+    if (now > petAnim.celebrateUntil) {
+      if (now > petAnim.nextDecisionAt) {
+        if (Math.random() < 0.6) {
+          petAnim.targetX = 20 + Math.random() * (maxX - 20);
+          petAnim.state = 'walking';
+        } else {
+          petAnim.state = 'idle';
+        }
+        petAnim.nextDecisionAt = now + 3500 + Math.random() * 4500;
+      }
+    }
+
+    if (petAnim.state === 'walking') {
+      const dx = petAnim.targetX - petAnim.x;
+      const speed = 0.55;
+      if (Math.abs(dx) < speed) {
+        petAnim.x = petAnim.targetX;
+        petAnim.state = 'idle';
+      } else {
+        petAnim.facing = dx > 0 ? 1 : -1;
+        petAnim.x += Math.sign(dx) * speed;
+      }
+    }
+
+    let extraY = 0;
+    if (now < petAnim.celebrateUntil) {
+      const remaining = (petAnim.celebrateUntil - now);
+      const total = petAnim._celebrateTotal || 500;
+      const t01 = Math.max(0, Math.min(1, 1 - remaining / total));
+      extraY = -Math.sin(t01 * Math.PI) * 18;
+    } else if (petAnim.state === 'idle') {
+      extraY = Math.sin(now / 400) * 1.5;
+    } else {
+      // tiny walk bob
+      extraY = Math.sin(now / 150) * 1;
+    }
+
+    box.style.transform = `translate(${petAnim.x}px, ${extraY}px) scaleX(${petAnim.facing})`;
+    requestAnimationFrame(petTick);
+  }
+
+  function startPetAnim() {
+    if (petAnim.running) return;
+    petAnim.running = true;
+    petAnim.reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (petAnim.reduced) {
+      const box = petBox();
+      if (box) box.style.transform = `translate(24px, 0px) scaleX(1)`;
+      petAnim.running = false;
+      return;
+    }
+    requestAnimationFrame(petTick);
+  }
+
+  function petCelebrate() {
+    petAnim._celebrateTotal = 500;
+    petAnim.celebrateUntil = performance.now() + 500;
+  }
+
+  function petLevelUp(stageNum) {
+    petAnim._celebrateTotal = 1200;
+    petAnim.celebrateUntil = performance.now() + 1200;
+    showPetToast(t('pet_levelup', t('pet_stage_' + stageNum)));
+  }
+
+  function showPetToast(msg) {
+    const toast = document.getElementById('pet-toast');
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showPetToast._t);
+    showPetToast._t = setTimeout(() => toast.classList.remove('show'), 2800);
+  }
+
+  // ----- Render pet visual + card -----
+  function renderPet() {
+    const box = petBox();
+    const showBtn = document.getElementById('pet-show-btn');
+    if (!box || !pet) return;
+    const species = getPetSpecies();
+    const stageIdx = petStageIdx(pet.totalXp);
+    const stageCfg = PET_STAGES[stageIdx];
+    box.querySelector('.pet-glyph').textContent = species.emoji;
+    box.style.fontSize = stageCfg.size + 'px';
+    box.classList.toggle('legendary', stageIdx === PET_STAGES.length - 1);
+    box.style.display = pet.hidden ? 'none' : '';
+    if (showBtn) showBtn.style.display = pet.hidden ? '' : 'none';
+  }
+
+  function togglePetHidden() {
+    if (!pet) return;
+    pet.hidden = !pet.hidden;
+    savePet();
+    renderPet();
+    if (pet.hidden) {
+      closePetCard();
+    } else {
+      startPetAnim();
+    }
+  }
+
+  function openPetCard() {
+    if (!pet) return;
+    renderPetCard();
+    document.getElementById('pet-card').classList.add('open');
+  }
+  function closePetCard() {
+    const c = document.getElementById('pet-card');
+    if (c) c.classList.remove('open');
+  }
+  function togglePetCard() {
+    const c = document.getElementById('pet-card');
+    if (!c) return;
+    if (c.classList.contains('open')) closePetCard();
+    else openPetCard();
+  }
+
+  function renderPetCard() {
+    const card = document.getElementById('pet-card');
+    if (!card || !pet) return;
+    const species = getPetSpecies();
+    const stageIdx = petStageIdx(pet.totalXp);
+    const stageCfg = PET_STAGES[stageIdx];
+    const stageName = t(stageCfg.nameKey);
+    const todayXp = pet.dailyXp[state.today] || 0;
+    const mult = streakMultiplier(pet.streak);
+    const nextStage = PET_STAGES[stageIdx + 1] || null;
+    const xpToNext = nextStage ? Math.max(0, nextStage.min - pet.totalXp) : 0;
+    const progressPct = nextStage
+      ? Math.min(100, ((pet.totalXp - stageCfg.min) / (nextStage.min - stageCfg.min)) * 100)
+      : 100;
+
+    card.innerHTML = `
+      <div class="pet-card-head">
+        <span class="pet-card-emoji">${species.emoji}</span>
+        <div>
+          <div class="pet-card-name">${loc(species.name)}</div>
+          <div class="pet-card-stage">${stageName} · ${t('pet_total_xp')} ${pet.totalXp} XP</div>
+        </div>
+        <button class="pet-card-x" onclick="closePetCard()">×</button>
+      </div>
+      <div class="pet-card-flavor">"${loc(species.flavor)}"</div>
+      <div class="pet-card-progress-wrap">
+        <div class="pet-card-progress-bar"><div style="width:${progressPct}%"></div></div>
+        <div class="pet-card-progress-meta">${nextStage ? `${pet.totalXp} / ${nextStage.min} XP · ${t('pet_to_next')} ${xpToNext}` : t('pet_max_stage')}</div>
+      </div>
+      <div class="pet-card-stats">
+        <div><span>${t('pet_streak')}</span><b class="${mult > 1 ? 'has-mult' : ''}">${pet.streak} ${t('pet_days')}${mult > 1 ? ` · ×${mult}` : ''}</b></div>
+        <div><span>${t('pet_today_xp')}</span><b>${todayXp} / ${PET_DAILY_CAP}</b></div>
+        <div><span>${t('pet_born')}</span><b>${fmtDate(pet.bornAt)}</b></div>
+      </div>
+      <div class="pet-card-footer">
+        <button onclick="togglePetHidden()">${t('pet_hide')}</button>
+      </div>
+    `;
+  }
+
+  // Reposition pet on window resize so it doesn't go off-screen
+  window.addEventListener('resize', () => {
+    if (!pet) return;
+    const stageCfg = PET_STAGES[petStageIdx(pet.totalXp)];
+    const maxX = Math.max(60, window.innerWidth - stageCfg.size - 30);
+    if (petAnim.x > maxX) petAnim.x = maxX;
+    if (petAnim.targetX > maxX) petAnim.targetX = maxX;
+  });
+
+  window.togglePetCard = togglePetCard;
+  window.closePetCard = closePetCard;
+  window.togglePetHidden = togglePetHidden;
+  window.openPetCard = openPetCard;
+
   // ========== INIT ==========
   (async () => {
     await loadState();
     render();
     document.getElementById('root').classList.add('loaded');
+
+    // Pet: load (or hatch if first-time), then render + start animation
+    await loadPet();
+    renderPet();
+    startPetAnim();
 
     // First-time tutorial
     const onboarded = await storeGet('onboarded');
