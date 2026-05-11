@@ -638,6 +638,13 @@
   }
   .pet-glyph { display: inline-block; }
 
+  /* Card lights up briefly when pet lands on it */
+  .pet-landed {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 12px rgba(217, 107, 62, 0.22);
+    transition: border-color 0.35s, box-shadow 0.35s;
+  }
+
   .pet-toast {
     position: fixed; bottom: 88px; left: 50%;
     transform: translateX(-50%) translateY(20px);
@@ -2296,8 +2303,8 @@
           renderRoadmap();
           renderCounters();
           renderRecommendations();
-          // Pet XP: only on solving (not un-checking)
-          if (!wasSolved) await awardXp(1);
+          // Pet XP: only on solving (not un-checking). Pet jumps onto roadmap card.
+          if (!wasSolved) await awardXp(1, 'roadmap');
         });
         problemsWrap.appendChild(row);
       }
@@ -2338,7 +2345,7 @@
         if (!state.dailyChecks[tk.id]) delete state.dailyChecks[tk.id];
         await saveDaily();
         renderDaily();
-        if (!wasChecked) await awardXp(1);
+        if (!wasChecked) await awardXp(1, 'daily');
       });
       wrap.appendChild(li);
     }
@@ -2367,7 +2374,7 @@
         if (!state.weeklyChecks[tk.id]) delete state.weeklyChecks[tk.id];
         await saveWeekly();
         renderWeekly();
-        if (!wasChecked) await awardXp(1);
+        if (!wasChecked) await awardXp(1, 'weekly');
       });
       wrap.appendChild(li);
     }
@@ -3007,7 +3014,7 @@
     await storeSet('pet', pet);
   }
 
-  async function awardXp(amount) {
+  async function awardXp(amount, perchKey) {
     if (!pet || !amount || amount <= 0) return;
     const today = state.today;
     const todayXp = pet.dailyXp[today] || 0;
@@ -3050,74 +3057,260 @@
     if (document.getElementById('pet-card').classList.contains('open')) {
       renderPetCard();
     }
+    // Pet jumps onto the card that triggered the XP (only when on ground & visible)
+    if (perchKey) tryJumpPetToCard(perchKey);
   }
 
   // ----- Animation engine -----
+  // Coord model: pet is `position: fixed; left: 0; bottom: 16px`. We translate(x, -elev) where
+  // elev (px) is height above the bottom-of-viewport line. On ground elev=0. On a perch,
+  // elev = window.innerHeight - 16 - perch.topY (so pet's bottom sits at perch.topY).
+  const PERCH_TOP_SAFE = 64;     // perch must be at least this far from viewport top
+  const PERCH_BOTTOM_SAFE = 90;  // perch.top must be at least this far from viewport bottom
+  const PERCH_JUMP_CHANCE = 0.15;
+  const PERCH_STAY_MIN = 6000;
+  const PERCH_STAY_RAND = 6000;
+
+  // Tag perchable cards once per render-pass (idempotent).
+  function tagPetPerches() {
+    const set = (sel, key) => {
+      const el = document.querySelector(sel);
+      if (el && !el.hasAttribute('data-pet-perch')) el.setAttribute('data-pet-perch', key);
+    };
+    set('.today-card', 'today');
+    set('.checkpoint-card', 'checkpoint');
+    set('.notes-card', 'notes');
+    set('.links-card', 'links');
+    set('.roadmap-card', 'roadmap');
+    set('.weekly-card', 'weekly');
+    // grid-2 rows: first row [daily, counters], second row [weekly, milestones]
+    const grids = document.querySelectorAll('.grid-2');
+    if (grids[0]) {
+      const c = grids[0].querySelectorAll('.card');
+      if (c[0] && !c[0].hasAttribute('data-pet-perch')) c[0].setAttribute('data-pet-perch', 'daily');
+      if (c[1] && !c[1].hasAttribute('data-pet-perch')) c[1].setAttribute('data-pet-perch', 'counters');
+    }
+    if (grids[1]) {
+      const c = grids[1].querySelectorAll('.card');
+      // weekly-card already tagged above, but if class missing fall back to position
+      if (c[0] && !c[0].hasAttribute('data-pet-perch')) c[0].setAttribute('data-pet-perch', 'weekly');
+      if (c[1] && !c[1].hasAttribute('data-pet-perch')) c[1].setAttribute('data-pet-perch', 'milestones');
+    }
+  }
+
+  function _perchFromEl(el) {
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    if (r.width < 80) return null;
+    return { el, key: el.getAttribute('data-pet-perch'), topY: r.top, left: r.left, right: r.right, width: r.width };
+  }
+  function getPerches() {
+    const out = [];
+    document.querySelectorAll('[data-pet-perch]').forEach(el => {
+      const r = el.getBoundingClientRect();
+      if (r.top >= PERCH_TOP_SAFE
+          && r.top <= window.innerHeight - PERCH_BOTTOM_SAFE
+          && r.width >= 100) {
+        out.push({ el, key: el.getAttribute('data-pet-perch'), topY: r.top, left: r.left, right: r.right, width: r.width });
+      }
+    });
+    return out;
+  }
+  function isPerchStillSafe(p) {
+    if (!p || !p.el || !p.el.isConnected) return false;
+    const r = p.el.getBoundingClientRect();
+    return r.top >= PERCH_TOP_SAFE && r.top <= window.innerHeight - PERCH_BOTTOM_SAFE;
+  }
+  function refreshPerchData(p) {
+    if (!p || !p.el) return;
+    const r = p.el.getBoundingClientRect();
+    p.topY = r.top; p.left = r.left; p.right = r.right; p.width = r.width;
+  }
+  function flashPerch(p) {
+    if (!p || !p.el) return;
+    p.el.classList.add('pet-landed');
+    clearTimeout(p._flashTimer);
+    p._flashTimer = setTimeout(() => p.el.classList.remove('pet-landed'), 1100);
+  }
+  function elevForPerch(p) {
+    return Math.max(0, window.innerHeight - 16 - p.topY);
+  }
+
   const petAnim = {
+    mode: 'ground',        // 'ground' | 'walking-perch' | 'jumping'
     x: 60, targetX: 60,
-    state: 'idle',          // 'idle' | 'walking'
-    nextDecisionAt: 0,
-    celebrateUntil: 0,
+    elev: 0,
+    walking: false,
     facing: 1,
+    nextDecisionAt: 0,
+    perch: null,
+    perchUntil: 0,
+    celebrateUntil: 0,
+    _celebrateTotal: 500,
+    jumpStart: 0, jumpDur: 850,
+    jumpFromX: 0, jumpFromElev: 0,
+    jumpToX: 0, jumpToElev: 0,
+    _pendingPerch: null,
     running: false,
     reduced: false,
   };
 
   function petBox() { return document.getElementById('pet-container'); }
+  function petSize() { return PET_STAGES[petStageIdx(pet ? pet.totalXp : 0)].size; }
+
+  function startJumpTo(perch) {
+    const size = petSize();
+    petAnim.mode = 'jumping';
+    petAnim.jumpStart = performance.now();
+    petAnim.jumpDur = 850;
+    petAnim.jumpFromX = petAnim.x;
+    petAnim.jumpFromElev = petAnim.elev;
+    if (perch) {
+      // jump to top of card
+      petAnim.jumpToX = perch.left + 14 + Math.random() * Math.max(0, perch.width - size - 28);
+      petAnim.jumpToElev = elevForPerch(perch);
+      petAnim._pendingPerch = perch;
+    } else {
+      // jump down to ground
+      const maxX = Math.max(60, window.innerWidth - size - 30);
+      petAnim.jumpToX = 20 + Math.random() * (maxX - 20);
+      petAnim.jumpToElev = 0;
+      petAnim._pendingPerch = null;
+    }
+    petAnim.facing = petAnim.jumpToX > petAnim.jumpFromX ? 1 : -1;
+    petAnim.walking = false;
+  }
 
   function petTick(now) {
     if (!pet || pet.hidden) { petAnim.running = false; return; }
     if (document.hidden) {
-      // Pause silently
       setTimeout(() => requestAnimationFrame(petTick), 500);
       return;
     }
-
     const box = petBox();
     if (!box) { petAnim.running = false; return; }
 
     const stageCfg = PET_STAGES[petStageIdx(pet.totalXp)];
-    const sizePx = stageCfg.size;
-    const maxX = Math.max(60, window.innerWidth - sizePx - 30);
+    const size = stageCfg.size;
 
-    if (now > petAnim.celebrateUntil) {
-      if (now > petAnim.nextDecisionAt) {
+    // -------- Mode logic --------
+    if (petAnim.mode === 'jumping') {
+      const t01 = Math.min(1, (now - petAnim.jumpStart) / petAnim.jumpDur);
+      const linX = petAnim.jumpFromX + (petAnim.jumpToX - petAnim.jumpFromX) * t01;
+      const linE = petAnim.jumpFromElev + (petAnim.jumpToElev - petAnim.jumpFromElev) * t01;
+      const hop = Math.sin(t01 * Math.PI) * (80 + Math.abs(petAnim.jumpToElev - petAnim.jumpFromElev) * 0.25);
+      petAnim.x = linX;
+      petAnim.elev = linE + hop;
+      if (t01 >= 1) {
+        petAnim.x = petAnim.jumpToX;
+        petAnim.elev = petAnim.jumpToElev;
+        if (petAnim._pendingPerch) {
+          petAnim.perch = petAnim._pendingPerch;
+          petAnim._pendingPerch = null;
+          petAnim.mode = 'walking-perch';
+          petAnim.perchUntil = now + PERCH_STAY_MIN + Math.random() * PERCH_STAY_RAND;
+          petAnim.nextDecisionAt = now + 1200;
+          flashPerch(petAnim.perch);
+        } else {
+          petAnim.mode = 'ground';
+          petAnim.perch = null;
+          petAnim.nextDecisionAt = now + 1800;
+        }
+        // landing squash kick
+        petAnim._celebrateTotal = 280;
+        petAnim.celebrateUntil = now + 280;
+      }
+    } else if (petAnim.mode === 'walking-perch') {
+      // follow card during scroll: refresh perch coords every tick
+      refreshPerchData(petAnim.perch);
+      if (!isPerchStillSafe(petAnim.perch)) {
+        // perch scrolling out — jump down
+        startJumpTo(null);
+      } else {
+        // anchor elev to current perch position (so pet rides the card)
+        petAnim.elev = elevForPerch(petAnim.perch);
+        // clamp x to perch bounds (perch width can change if layout reflows)
+        const minX = petAnim.perch.left + 14;
+        const maxX = petAnim.perch.right - size - 14;
+        if (maxX > minX) {
+          if (petAnim.x < minX) petAnim.x = minX;
+          if (petAnim.x > maxX) petAnim.x = maxX;
+          if (now > petAnim.nextDecisionAt && now < petAnim.perchUntil) {
+            if (Math.random() < 0.6) {
+              petAnim.targetX = minX + Math.random() * (maxX - minX);
+              petAnim.walking = true;
+            } else {
+              petAnim.walking = false;
+            }
+            petAnim.nextDecisionAt = now + 2200 + Math.random() * 2800;
+          }
+          if (petAnim.walking) {
+            const dx = petAnim.targetX - petAnim.x;
+            const speed = 0.5;
+            if (Math.abs(dx) < speed) { petAnim.x = petAnim.targetX; petAnim.walking = false; }
+            else { petAnim.facing = dx > 0 ? 1 : -1; petAnim.x += Math.sign(dx) * speed; }
+          }
+          if (now > petAnim.perchUntil) {
+            // choose: 50% jump to another perch, 50% to ground
+            const perches = getPerches().filter(pe => !petAnim.perch || pe.key !== petAnim.perch.key);
+            if (perches.length && Math.random() < 0.5) startJumpTo(perches[Math.floor(Math.random() * perches.length)]);
+            else startJumpTo(null);
+          }
+        }
+      }
+    } else {
+      // ground mode
+      const maxX = Math.max(60, window.innerWidth - size - 30);
+      if (now > petAnim.celebrateUntil && now > petAnim.nextDecisionAt) {
+        if (Math.random() < PERCH_JUMP_CHANCE) {
+          const perches = getPerches();
+          if (perches.length) {
+            startJumpTo(perches[Math.floor(Math.random() * perches.length)]);
+            requestAnimationFrame(petTick);
+            return;
+          }
+        }
         if (Math.random() < 0.6) {
           petAnim.targetX = 20 + Math.random() * (maxX - 20);
-          petAnim.state = 'walking';
+          petAnim.walking = true;
         } else {
-          petAnim.state = 'idle';
+          petAnim.walking = false;
         }
         petAnim.nextDecisionAt = now + 3500 + Math.random() * 4500;
       }
-    }
-
-    if (petAnim.state === 'walking') {
-      const dx = petAnim.targetX - petAnim.x;
-      const speed = 0.55;
-      if (Math.abs(dx) < speed) {
-        petAnim.x = petAnim.targetX;
-        petAnim.state = 'idle';
-      } else {
-        petAnim.facing = dx > 0 ? 1 : -1;
-        petAnim.x += Math.sign(dx) * speed;
+      if (petAnim.walking) {
+        const dx = petAnim.targetX - petAnim.x;
+        const speed = 0.55;
+        if (Math.abs(dx) < speed) { petAnim.x = petAnim.targetX; petAnim.walking = false; }
+        else { petAnim.facing = dx > 0 ? 1 : -1; petAnim.x += Math.sign(dx) * speed; }
       }
     }
 
-    let extraY = 0;
-    if (now < petAnim.celebrateUntil) {
-      const remaining = (petAnim.celebrateUntil - now);
+    // -------- Render transform --------
+    let sx = 1, sy = 1, extraY = 0;
+    if (petAnim.mode === 'jumping') {
+      const t01 = Math.min(1, (now - petAnim.jumpStart) / petAnim.jumpDur);
+      if (t01 < 0.1) { sx = 1.15; sy = 0.85; }
+      else if (t01 < 0.45) { sx = 0.92; sy = 1.12; }
+      else if (t01 < 0.85) { sx = 0.95; sy = 1.06; }
+      else { sx = 1.18; sy = 0.82; }
+    } else if (now < petAnim.celebrateUntil) {
+      const remaining = petAnim.celebrateUntil - now;
       const total = petAnim._celebrateTotal || 500;
       const t01 = Math.max(0, Math.min(1, 1 - remaining / total));
-      extraY = -Math.sin(t01 * Math.PI) * 18;
-    } else if (petAnim.state === 'idle') {
-      extraY = Math.sin(now / 400) * 1.5;
+      extraY = -Math.sin(t01 * Math.PI) * 14;
+      if (t01 < 0.2) { sx = 1.15; sy = 0.85; }
+      else if (t01 < 0.7) { sx = 0.92; sy = 1.12; }
+      else { sx = 1.12; sy = 0.88; }
+    } else if (petAnim.walking) {
+      extraY = Math.sin(now / 150) * 1.2;
     } else {
-      // tiny walk bob
-      extraY = Math.sin(now / 150) * 1;
+      extraY = Math.sin(now / 420) * 1.3;
+      sy = 1 + Math.sin(now / 620) * 0.025;
     }
 
-    box.style.transform = `translate(${petAnim.x}px, ${extraY}px) scaleX(${petAnim.facing})`;
+    const totalY = -petAnim.elev + extraY;
+    box.style.transform = `translate(${petAnim.x}px, ${totalY}px) scale(${sx * petAnim.facing}, ${sy})`;
     requestAnimationFrame(petTick);
   }
 
@@ -3143,6 +3336,18 @@
     petAnim._celebrateTotal = 1200;
     petAnim.celebrateUntil = performance.now() + 1200;
     showPetToast(t('pet_levelup', t('pet_stage_' + stageNum)));
+  }
+
+  // Triggered by task completion: try to jump pet to corresponding card.
+  function tryJumpPetToCard(perchKey) {
+    if (!pet || pet.hidden || petAnim.reduced) return;
+    if (petAnim.mode !== 'ground') return;
+    const el = document.querySelector(`[data-pet-perch="${perchKey}"]`);
+    if (!el) return;
+    const p = _perchFromEl(el);
+    if (!p) return;
+    if (p.topY < PERCH_TOP_SAFE || p.topY > window.innerHeight - PERCH_BOTTOM_SAFE) return;
+    startJumpTo(p);
   }
 
   function showPetToast(msg) {
@@ -3260,6 +3465,7 @@
     // Pet: load (or hatch if first-time), then render + start animation
     await loadPet();
     renderPet();
+    tagPetPerches();
     startPetAnim();
 
     // First-time tutorial
