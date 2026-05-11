@@ -1,3 +1,5 @@
+**English** | [简体中文](./README.zh-CN.md)
+
 # 10-Week Battle Log
 
 A single-file, no-build, opinionated **interview prep tracker** designed for a 10-week sprint. Originally built for a robotics/AI engineer prepping for top-tier US tech interviews (NVIDIA, Apple, Google, etc), but the framework works for any 10-week interview push.
@@ -66,9 +68,10 @@ Fonts via Google Fonts CDN:
 
 ```
 battle-log/
-├── index.html       # The whole app — open this
-├── README.md        # You are here
-├── LICENSE          # MIT
+├── index.html        # The whole app — open this
+├── README.md         # You are here
+├── README.zh-CN.md   # 中文版
+├── LICENSE           # MIT
 └── .gitignore
 ```
 
