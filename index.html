@@ -1391,10 +1391,17 @@
     },
   ];
 
+  // Format a Date to YYYY-MM-DD using LOCAL components (matches today()).
+  function dateToStr(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
   function addDays(dateStr, n) {
     const d = parseDate(dateStr);
     d.setDate(d.getDate() + n);
-    return d.toISOString().slice(0, 10);
+    return dateToStr(d);
   }
 
   function buildPhases(startDate) {
@@ -1705,10 +1712,8 @@
   function problemsByPattern(pat) { return ROADMAP.filter(p => p.p === pat); }
 
   // ========== DATE UTILS ==========
-  function today() {
-    const d = new Date();
-    return d.toISOString().slice(0, 10);
-  }
+  // Uses LOCAL date (not UTC) so streak day boundaries match the user's wall clock.
+  function today() { return dateToStr(new Date()); }
   function parseDate(s) { return new Date(s + 'T00:00:00'); }
   function daysBetween(a, b) {
     return Math.round((parseDate(b) - parseDate(a)) / 86400000);
@@ -1739,7 +1744,7 @@
     const day = d.getDay(); // 0=Sun, 1=Mon
     const offset = day === 0 ? -6 : 1 - day;
     d.setDate(d.getDate() + offset);
-    return d.toISOString().slice(0, 10);
+    return dateToStr(d);
   }
 
   // ========== STORAGE (Claude window.storage OR browser localStorage) ==========
