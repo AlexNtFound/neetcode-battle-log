@@ -27,7 +27,7 @@ Open `index.html`, get hit with:
 
 1. Download `index.html` (single file, no dependencies)
 2. Open it in any modern browser
-3. Click **⚙ 设置** at the bottom to set your own start date
+3. Click **⚙ Settings** at the bottom to set your own start date
 4. Bookmark it. Open it every day.
 
 **Host it for yourself or share with friends:**
