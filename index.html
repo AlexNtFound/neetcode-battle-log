@@ -757,6 +757,15 @@
         <input type="date" id="settings-startdate" />
         <div class="help" id="settings-startdate-help">—</div>
       </div>
+      <div class="settings-row">
+        <label id="settings-backup-label">—</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button id="export-btn" class="filter-chip" onclick="exportData()">—</button>
+          <button id="import-btn" class="filter-chip" onclick="triggerImport()">—</button>
+          <input type="file" id="import-file-input" accept="application/json,.json" style="display:none" onchange="importData(event)" />
+        </div>
+        <div class="help" id="settings-backup-help">—</div>
+      </div>
       <div class="settings-meta">
         <span id="settings-storage-backend-label">—</span><b id="storage-backend">—</b><br>
         <span id="settings-total-days-label">—</span><b id="settings-total-days-val">—</b><br>
@@ -831,6 +840,13 @@
       settings_total_days: '总天数: ',
       settings_total_days_val: '70 (10 周)',
       settings_storage_claude: 'Claude (window.storage)', settings_storage_local: 'Browser localStorage',
+      settings_backup_label: '数据备份 · backup',
+      settings_backup_help: '导出所有进度为 JSON 文件 (换设备 / 换浏览器 / 防止清缓存丢数据时用)。导入会先清空当前数据再恢复。',
+      settings_export_btn: '↓ 导出 JSON',
+      settings_import_btn: '↑ 导入 JSON',
+      import_confirm: '导入会覆盖当前所有数据 (清单 / 笔记 / 题库进度)。确认继续?',
+      import_invalid: '文件无效或不是 battle log 备份',
+      import_done: '导入成功, 页面即将刷新',
       settings_cancel: '取消', settings_save: '保存',
       // Day labels
       day_of_70: 'Day {0} of 70 · {1} Day {2}',
@@ -926,6 +942,13 @@
       settings_total_days: 'Total days: ',
       settings_total_days_val: '70 (10 weeks)',
       settings_storage_claude: 'Claude (window.storage)', settings_storage_local: 'Browser localStorage',
+      settings_backup_label: 'Backup',
+      settings_backup_help: 'Export all progress as a JSON file (for moving to a new device / browser, or guarding against cleared browser data). Importing wipes current data first, then restores from the file.',
+      settings_export_btn: '↓ Export JSON',
+      settings_import_btn: '↑ Import JSON',
+      import_confirm: 'Importing will overwrite all current data (checks / notes / roadmap progress). Continue?',
+      import_invalid: 'Invalid file or not a battle log backup',
+      import_done: 'Import successful, reloading',
       settings_cancel: 'Cancel', settings_save: 'Save',
       day_of_70: 'Day {0} of 70 · {1} Day {2}',
       before_start_n: '{0} days until Phase 1 starts',
@@ -2389,6 +2412,10 @@
     set('settings-lang-label', t('settings_lang_label'));
     set('settings-startdate-label', t('settings_startdate_label'));
     set('settings-startdate-help', t('settings_startdate_help'), true);
+    set('settings-backup-label', t('settings_backup_label'));
+    set('settings-backup-help', t('settings_backup_help'));
+    set('export-btn', t('settings_export_btn'));
+    set('import-btn', t('settings_import_btn'));
     set('settings-storage-backend-label', t('settings_storage_backend'));
     set('settings-total-days-label', t('settings_total_days'));
     set('settings-total-days-val', t('settings_total_days_val'));
@@ -2446,6 +2473,67 @@
       location.reload();
     } catch (e) { alert('reset failed: ' + e); }
   }
+
+  // ========== EXPORT / IMPORT ==========
+  async function exportData() {
+    try {
+      const keys = await storeListKeys();
+      const data = {};
+      for (const k of keys) {
+        data[k] = await storeGet(k);
+      }
+      const payload = {
+        format: 'battlelog-export',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        data: data,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `battle-log-backup-${today()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) { alert('export failed: ' + e); }
+  }
+
+  function triggerImport() {
+    document.getElementById('import-file-input').click();
+  }
+
+  async function importData(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
+      if (!payload || payload.format !== 'battlelog-export' || !payload.data || typeof payload.data !== 'object') {
+        throw new Error('format mismatch');
+      }
+      if (!confirm(t('import_confirm'))) {
+        e.target.value = '';
+        return;
+      }
+      // Wipe existing first
+      const existing = await storeListKeys();
+      for (const k of existing) await storeDelete(k);
+      // Restore from backup
+      for (const [k, v] of Object.entries(payload.data)) {
+        await storeSet(k, v);
+      }
+      alert(t('import_done'));
+      location.reload();
+    } catch (err) {
+      alert(t('import_invalid') + ': ' + (err.message || err));
+      e.target.value = '';
+    }
+  }
+  window.exportData = exportData;
+  window.triggerImport = triggerImport;
+  window.importData = importData;
 
   // ========== TUTORIAL ==========
   let tour = { active: false, step: 0 };
