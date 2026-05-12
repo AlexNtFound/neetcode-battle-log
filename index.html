@@ -1725,7 +1725,9 @@
   }
   function fmtFullDate(s) {
     const d = parseDate(s);
-    const days = ['周日','周一','周二','周三','周四','周五','周六'];
+    const daysZh = ['周日','周一','周二','周三','周四','周五','周六'];
+    const daysEn = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const days = state.lang === 'en' ? daysEn : daysZh;
     return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} · ${days[d.getDay()]}`;
   }
   function getCurrentPhase(date) {
