@@ -1814,7 +1814,11 @@
     notes: '',
     roadmapSolved: {}, // {slug: true}
     expandedPatterns: {}, // {patternName: true}
-    filter: 'all',     // 'all' | 'unsolved' | 'Easy' | 'Medium' | 'Hard'
+    // Two independent filter axes:
+    //   filterSolved: 'all' (show solved+unsolved) | 'unsolved' (hide solved)
+    //   filterDiffs:  Set<'Easy'|'Medium'|'Hard'> — empty = no diff filter (show all)
+    filterSolved: 'all',
+    filterDiffs: new Set(),
   };
 
   async function loadState() {
@@ -1961,13 +1965,16 @@
     // 4. Any leftover pattern from the full order
     PATTERN_ORDER.forEach(p => { if (!seenPats.has(p)) { priority.push(p); seenPats.add(p); } });
 
+    const diffFilter = state.filterDiffs;
+    const hasDiffFilter = diffFilter && diffFilter.size > 0;
+
     for (const pat of priority) {
       const probs = problemsByPattern(pat);
       for (const pr of probs) {
-        if (!state.roadmapSolved[pr.s]) {
-          candidates.push(pr);
-          if (candidates.length >= n) return candidates;
-        }
+        if (state.roadmapSolved[pr.s]) continue;
+        if (hasDiffFilter && !diffFilter.has(pr.d)) continue;
+        candidates.push(pr);
+        if (candidates.length >= n) return candidates;
       }
     }
     return candidates;
@@ -2320,8 +2327,8 @@
         const row = document.createElement('div');
         const solved = !!state.roadmapSolved[pr.s];
         let hidden = false;
-        if (state.filter === 'unsolved' && solved) hidden = true;
-        if (['Easy','Medium','Hard'].includes(state.filter) && state.filter !== pr.d) hidden = true;
+        if (state.filterSolved === 'unsolved' && solved) hidden = true;
+        if (state.filterDiffs.size > 0 && !state.filterDiffs.has(pr.d)) hidden = true;
         row.className = 'prob-row' + (solved ? ' solved' : '') + (hidden ? ' hidden' : '');
         row.innerHTML = `
           <div class="prob-check"></div>
@@ -2353,12 +2360,26 @@
       body.appendChild(block);
     }
 
-    // Filter chips
-    document.querySelectorAll('.filter-chip').forEach(chip => {
-      chip.classList.toggle('active', chip.dataset.filter === state.filter);
+    // Filter chips (only the ones inside roadmap-filters; settings-drawer chips share the class)
+    document.querySelectorAll('#roadmap-filters .filter-chip').forEach(chip => {
+      const f = chip.dataset.filter;
+      let active;
+      if (f === 'all') active = (state.filterSolved === 'all' && state.filterDiffs.size === 0);
+      else if (f === 'unsolved') active = (state.filterSolved === 'unsolved');
+      else active = state.filterDiffs.has(f);  // Easy / Medium / Hard
+      chip.classList.toggle('active', active);
       chip.onclick = () => {
-        state.filter = chip.dataset.filter;
+        if (f === 'all') {
+          state.filterSolved = 'all';
+          state.filterDiffs.clear();
+        } else if (f === 'unsolved') {
+          state.filterSolved = state.filterSolved === 'unsolved' ? 'all' : 'unsolved';
+        } else {
+          if (state.filterDiffs.has(f)) state.filterDiffs.delete(f);
+          else state.filterDiffs.add(f);
+        }
         renderRoadmap();
+        renderRecommendations();  // diff filter also affects recommendations
       };
     });
   }
@@ -2653,9 +2674,13 @@
         ['Medium', t('filter_med')],
         ['Hard', t('filter_hard')],
       ];
-      filtersWrap.innerHTML = chips.map(([f, label]) =>
-        `<button class="filter-chip ${state.filter === f ? 'active' : ''}" data-filter="${f}">${label}</button>`
-      ).join('');
+      filtersWrap.innerHTML = chips.map(([f, label]) => {
+        let active;
+        if (f === 'all') active = (state.filterSolved === 'all' && state.filterDiffs.size === 0);
+        else if (f === 'unsolved') active = (state.filterSolved === 'unsolved');
+        else active = state.filterDiffs.has(f);
+        return `<button class="filter-chip ${active ? 'active' : ''}" data-filter="${f}">${label}</button>`;
+      }).join('');
     }
   }
 
