@@ -3054,34 +3054,46 @@
   window.startTour = startTour;
 
   // ========== TOC SIDEBAR ==========
-  const TOC_SECTIONS = [
-    { key: 'toc_today',       sel: '.today-card' },
-    { key: 'toc_daily',       sel: '[data-pet-perch="daily"]' },
-    { key: 'toc_totals',      sel: '[data-pet-perch="counters"]' },
-    { key: 'toc_weekly',      sel: '[data-pet-perch="weekly"]' },
-    { key: 'toc_milestones',  sel: '[data-pet-perch="milestones"]' },
-    { key: 'toc_checkpoint',  sel: '.checkpoint-card' },
-    { key: 'toc_notes',       sel: '.notes-card' },
-    { key: 'toc_links',       sel: '.links-card' },
-    { key: 'toc_roadmap',     sel: '.roadmap-card' },
-  ];
-  let _tocObserver = null;
+  // Resolve target cards via inner IDs (more reliable than data-pet-perch attrs which depend
+  // on tagPetPerches having run). Each section returns the closest enclosing .card / section.
+  function getTocSections() {
+    const byInnerId = (id) => document.getElementById(id)?.closest('.card, section');
+    const list = [
+      { key: 'toc_today',      el: document.querySelector('.today-card') },
+      { key: 'toc_daily',      el: byInnerId('daily-checklist') },
+      { key: 'toc_totals',     el: byInnerId('counters') },
+      { key: 'toc_weekly',     el: document.querySelector('.weekly-card') || byInnerId('weekly-checklist') },
+      { key: 'toc_milestones', el: byInnerId('milestones') },
+      { key: 'toc_checkpoint', el: document.querySelector('.checkpoint-card') },
+      { key: 'toc_notes',      el: document.querySelector('.notes-card') },
+      { key: 'toc_links',      el: document.querySelector('.links-card') },
+      { key: 'toc_roadmap',    el: document.querySelector('.roadmap-card') },
+    ];
+    return list.filter(s => s.el);
+  }
+
+  let _tocScrollHandler = null;
 
   function renderToc() {
     const nav = document.getElementById('toc-nav');
     if (!nav) return;
+    const sections = getTocSections();
     nav.innerHTML =
       `<div class="toc-label">${t('toc_label')}</div>` +
-      TOC_SECTIONS.map(s =>
-        `<a class="toc-item" href="javascript:void(0)" data-toc-sel="${s.sel}">${t(s.key)}</a>`
+      sections.map((s, i) =>
+        `<a class="toc-item" href="javascript:void(0)" data-toc-idx="${i}">${t(s.key)}</a>`
       ).join('');
-    nav.querySelectorAll('.toc-item').forEach(item => {
+    const items = nav.querySelectorAll('.toc-item');
+    items.forEach((item, i) => {
+      item._tocTarget = sections[i].el;
+      item._tocKey = sections[i].key;
       item.addEventListener('click', () => {
-        const target = document.querySelector(item.getAttribute('data-toc-sel'));
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (item._tocTarget) {
+          item._tocTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       });
     });
-    setupTocObserver();
+    setupTocActiveTracker();
   }
 
   // Cheap label-only refresh (called on every render — keeps i18n in sync)
@@ -3091,45 +3103,44 @@
     const lbl = nav.querySelector('.toc-label');
     if (lbl) lbl.textContent = t('toc_label');
     nav.querySelectorAll('.toc-item').forEach(item => {
-      const sel = item.getAttribute('data-toc-sel');
-      const section = TOC_SECTIONS.find(s => s.sel === sel);
-      if (section) item.textContent = t(section.key);
+      if (item._tocKey) item.textContent = t(item._tocKey);
     });
   }
 
-  function setupTocObserver() {
-    // Dispose any previous observer
-    if (_tocObserver) { _tocObserver.disconnect(); _tocObserver = null; }
-    if (typeof IntersectionObserver === 'undefined') return;
+  // Scroll-driven active tracking: find the section whose top has most recently crossed
+  // the trigger line (100px from viewport top). More predictable than IntersectionObserver
+  // because it consults all sections every scroll tick.
+  function setupTocActiveTracker() {
+    if (_tocScrollHandler) {
+      window.removeEventListener('scroll', _tocScrollHandler);
+      window.removeEventListener('resize', _tocScrollHandler);
+      _tocScrollHandler = null;
+    }
     const items = document.querySelectorAll('.toc-item');
     if (!items.length) return;
 
-    _tocObserver = new IntersectionObserver((entries) => {
-      // Pick the entry currently most visible in the upper-middle of the viewport
-      let best = null;
-      entries.forEach(en => {
-        if (en.isIntersecting) {
-          if (!best || en.intersectionRatio > best.intersectionRatio) best = en;
-        }
+    let ticking = false;
+    function update() {
+      const triggerY = 100;
+      let activeIdx = -1;
+      items.forEach((item, i) => {
+        const el = item._tocTarget;
+        if (!el) return;
+        const top = el.getBoundingClientRect().top;
+        if (top <= triggerY) activeIdx = i;  // last section whose top crossed → that's current
       });
-      if (!best) return;
-      items.forEach(it => {
-        const sel = it.getAttribute('data-toc-sel');
-        const match = sel && best.target.matches(sel);
-        it.classList.toggle('active', match || (it.classList.contains('active') && !sel));
-        if (match) {
-          items.forEach(i2 => { if (i2 !== it) i2.classList.remove('active'); });
-        }
-      });
-    }, {
-      rootMargin: '-20% 0px -60% 0px',
-      threshold: [0, 0.3, 0.6, 1.0],
-    });
-
-    TOC_SECTIONS.forEach(s => {
-      const el = document.querySelector(s.sel);
-      if (el) _tocObserver.observe(el);
-    });
+      items.forEach((it, i) => it.classList.toggle('active', i === activeIdx));
+    }
+    function onScroll() {
+      if (!ticking) {
+        requestAnimationFrame(() => { update(); ticking = false; });
+        ticking = true;
+      }
+    }
+    _tocScrollHandler = onScroll;
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    update();  // initial
   }
 
   // ========== PET SYSTEM ==========
