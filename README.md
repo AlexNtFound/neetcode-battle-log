@@ -6,37 +6,40 @@ A single-file, no-build, opinionated **interview prep tracker** designed for a 1
 
 > Stop choosing. Start doing. — the whole point of this tool.
 
+**→ Try it now: [alexntfound.github.io/neetcode-battle-log](https://alexntfound.github.io/neetcode-battle-log/)**
+
+No sign-up. Open the link, set your start date, bookmark. Your progress lives in your own browser — never sent to a server, never shared.
+
 ## What it does
 
-Open `index.html`, get hit with:
+Open the app and get hit with:
 
 - **Today's focus** — auto-derived from the date: which phase you're in, what to do today, whether you should be applying yet
 - **Recommended LeetCode problems** — next 2 unsolved from the NeetCode 150, filtered by your current phase's pattern focus (Phase 1 = Arrays & Hashing / Two Pointers / Sliding Window, etc)
 - **Daily + weekly checklists** — phase-specific, persist per day
 - **Cumulative counters** — LC problems, applications sent (practice / target), mocks done
-- **NeetCode 150 roadmap** — all 150 problems with LC + NC solution links, dependency diagram, filterable by difficulty
+- **NeetCode 150 roadmap** — all 150 problems with LC + NC solution links, dependency graph (matches the official NeetCode structure), filterable by difficulty
 - **Phase timeline** — visual where you are in the 10-week sprint
 - **Key date countdown** — "X days until you start applying to dream companies"
 - **Day-1 / phase-transition special actions** — auto-show "do these five things now" guidance on critical days
+- **Pet companion** — first visit hatches one of six creatures (dragon / wolf / fox / turtle / owl / cat). It walks around your viewport, hops onto cards when you complete tasks, and grows through 5 stages as you earn XP. Daily XP cap = 10. Streak multipliers at 7/14/21 consecutive days (×1.5 / ×2 / ×2.5) — consistency rewarded over bursts.
+- **Backup / migrate** — Export all your progress as a JSON file, or restore from one. Useful for moving devices or guarding against cleared browser data.
 - **Bilingual (中文 / English)** — toggle language at the bottom; auto-detects browser language on first load
 - **First-visit tutorial** — interactive walkthrough that picks your language, sets your start date, and spotlights each feature; re-runnable from Settings
 
 ## How to use
 
-**Quickest path:**
+**1. Live (easiest):** Open [alexntfound.github.io/neetcode-battle-log](https://alexntfound.github.io/neetcode-battle-log/) → click **⚙ Settings** at the bottom → set your own start date → bookmark. Open it every day.
 
-1. Download `index.html` (single file, no dependencies)
-2. Open it in any modern browser
-3. Click **⚙ Settings** at the bottom to set your own start date
-4. Bookmark it. Open it every day.
+**2. Offline / local:** Download `index.html` (single file, no dependencies) → open in any modern browser. Works identically to the live version.
 
-**Host it for yourself or share with friends:**
+**3. Host your own copy:**
 
 1. Fork this repo (or copy `index.html` into your own)
 2. Settings → Pages → deploy from main branch
 3. Visit `https://<your-username>.github.io/<repo-name>/`
 
-Each visitor's data is stored in **their own browser's localStorage** — completely private, never sent anywhere, no account needed.
+Each visitor's data is stored in **their own browser's localStorage** — completely private, never sent anywhere, no account needed. Switching devices? Use the **Export / Import JSON** buttons in Settings.
 
 ## Configuration
 
